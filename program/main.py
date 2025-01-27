@@ -9,36 +9,85 @@ import json
 
 # Configuración inicial
 client = Groq()
-# MODEL_NAME = "llama-3.3-70b-versatile"
-MODEL_NAME = "mixtral-8x7b-32768"
-df = None
+
+# Groq Models
+groq_models = {
+    "llama-3.3-70b-versatile":{
+        "name": "LLaMA-3.3-70b-Versatile",
+        "tokens": 32768,
+        "developer": "Meta",
+    },
+    "llama3-70b-8192": {
+        "name": "LLaMA3-70b-Instruct",
+        "tokens": 8192,
+        "developer": "Meta",
+    },
+    "llama3-8b-8192": {
+        "name": "LLaMA3-8b-Instruct",
+        "tokens": 8192,
+        "developer": "Meta",
+    },
+    "mixtral-8x7b-32768": {
+        "name": "Mixtral-8x7b-Instruct-v0.1",
+        "tokens": 32768,
+        "developer": "Mistral",
+    },
+    "gemma2-9b-it": {"name": "Gemma2-9b-it", "tokens": 8192, "developer": "Google"},
+}
+
+col1, col2 = st.sidebar.columns(2)
+
+with col1:
+    groq_model_option = st.selectbox(
+        "Choose a Groq model:",
+        options=list(groq_models.keys()),
+        format_func=lambda x: groq_models[x]["name"],
+        index=0,
+    )
+max_tokens_range = groq_models[groq_model_option]["tokens"]
+with col2:
+        max_tokens = st.slider(
+            "Max Tokens:",
+            min_value=512,
+            max_value=max_tokens_range,
+            value=min(32768, max_tokens_range),
+            step=512,
+            help=f"Adjust the maximum number of tokens for the model's response. Max for selected model: {max_tokens_range}",
+        )
+if "selected_groq_model" not in st.session_state or st.session_state.selected_groq_model != groq_model_option:
+      st.session_state.selected_groq_model = groq_model_option
+
+if "dataframe" not in st.session_state:
+    st.session_state.dataframe = None
+
+debug = st.sidebar.checkbox("Debug", value=False)
 def get_document_info(document:UploadedFile):
-    global df
     """Obtiene información relevante del documento cargado."""
     if document.type == "text/csv":
-        df = pd.read_csv(document)
+        st.session_state.dataframe = pd.read_csv(document)
     elif document.type == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
-        df = pd.read_excel(document._file_urls.upload_url)
+        st.session_state.dataframe = pd.read_excel(document._file_urls.upload_url)
     elif document.type == "application/json":
-        df = pd.read_json(document._file_urls.upload_url)
+        st.session_state.dataframe = pd.read_json(document._file_urls.upload_url)
     else:
         return {"error": "Tipo de documento no soportado"}
 
     # Extraer información relevante
     info = {
-        "column_names": df.columns.tolist(),
-        "max_values": df.max(numeric_only=True).to_dict(),
-        "min_values": df.min(numeric_only=True).to_dict(),
-        "unique_values": {col: df[col].nunique() for col in df.columns},
-        "missing_values": df.isnull().sum().to_dict(),
+        "column_names": st.session_state.dataframe.columns.tolist(),
+        "max_values": st.session_state.dataframe.max(numeric_only=True).to_dict(),
+        "min_values": st.session_state.dataframe.min(numeric_only=True).to_dict(),
+        "unique_values": {col: st.session_state.dataframe[col].nunique() for col in st.session_state.dataframe.columns},
+        "missing_values": st.session_state.dataframe.isnull().sum().to_dict(),
+        "firsts_rows": st.session_state.dataframe.head().to_dict(),
     }
 
     return info
 
 def preprocess_document():
     """Preprocesa el documento para facilitar consultas futuras."""
-    global df
-    if df is None:
+
+    if st.session_state.dataframe is None:
         return {"error": "No hay un dataframe cargado para preprocesar"}
 
     # 1. Obtener tareas de preprocesamiento del LLM
@@ -61,9 +110,9 @@ def preprocess_document():
         """},
         {"role": "user", "content": f"""
             Información del DataFrame:
-            Columnas: {df.columns.tolist()}
-            Tipos: {df.dtypes.to_dict()}
-            Primeras filas: {df.head().to_dict()}
+            Columnas: {st.session_state.dataframe.columns.tolist()}
+            Tipos: {st.session_state.dataframe.dtypes.to_dict()}
+            Primeras filas: {st.session_state.dataframe.head().to_dict()}
         """}
     ]
 
@@ -79,17 +128,17 @@ def preprocess_document():
         task_name = task.get("tarea")
         column_name = task.get("columna")
 
-        if not column_name or column_name not in df.columns:
+        if not column_name or column_name not in st.session_state.dataframe.columns:
             return {"error": f"Nombre de columna inválido: {column_name}"}
 
         if task_name == "convertir_fecha":
             date_format = task.get("formato")
             preprocess_code = f"""
-            df['{column_name}'] = pd.to_datetime(df['{column_name}'], format='{date_format}')
+            st.session_state.dataframe['{column_name}'] = pd.to_datetime(st.session_state.dataframe['{column_name}'], format='{date_format}')
             """
         elif task_name == "identificar_categorica":
             preprocess_code = f"""
-            categorias = df['{column_name}'].unique().tolist()
+            categorias = st.session_state.dataframe['{column_name}'].unique().tolist()
             # Aquí se podría añadir código para manejar las categorías (e.g., convertir a tipo 'category')
             print(f"Categorías de '{column_name}': {{categorias}}") 
             """
@@ -112,7 +161,7 @@ def preprocess_document():
 
     return {"success": "Preprocesamiento completado"}
 
-def query_llm(messages, model=MODEL_NAME, temperature=0.5, max_tokens=1024):
+def query_llm(messages, model=st.session_state.selected_groq_model, temperature=0.5, max_tokens=1024):
     # print(messages)
     # a = input("Should make this request:[Y/N]")
     # if a =="N":
@@ -126,31 +175,32 @@ def query_llm(messages, model=MODEL_NAME, temperature=0.5, max_tokens=1024):
     )
     return response.choices[0].message.content
 
-def execute_code(code,previous):
+def execute_code(code):
     """Ejecuta código Python de manera segura."""
     try:
         print(code)
-        local_vars = {'df': df,**previous}
+        print("____________________")
+        local_vars = {'df': st.session_state.dataframe}
+        print(local_vars)
         exec(code, {}, local_vars)
-        local_vars.pop('df', None)  # Eliminar el key 'df' antes de devolverlo
-        return local_vars
+        return local_vars.pop('response', None) 
+
     except Exception as e:
         return {"error": str(e)}
 
-
-print("A")
 # Interfaz gráfica
 st.title("Generador de Reportes Automatizados con LLM")
 
 # Paso 1: Subir documento
 document_file = st.file_uploader("Sube tu documento", type=["txt", "csv", "xlsx", "json"])
 
+# if "document_file" not in st.session_state:
+#     st.session_state.document_file = document_file
+
 if document_file:
     with st.spinner("Obteniendo información del documento..."):
-        print(document_file)
-        #document = document_file.read()
         document_info = get_document_info(document_file)
-        st.success("Documento procesado con éxito.")
+        st.success("Documento cargado con éxito.")
 
     with st.spinner("Preprocesando el documento..."):
         preprocess_document()
@@ -161,90 +211,287 @@ if document_file:
 
     if st.button("Generar Reporte") and user_query:
         with st.spinner("Generando reporte..."):
-            # Skeleton of Thought: dividir la consulta en tareas atómicas
+            # Armar el esqueleto del reporte
             skeleton_messages = [
-                {"role": "system", "content": f"""Dada la siguiente consulta del usuario sobre el documento cargado, identifica las tareas atómicas necesarias para responderla.
-                 la informacion del documento esta contenida en un dataframe de pandas con la siguiente informacion relevante:
+                {"role": "system", "content": f"""Dada la siguiente consulta del usuario sobre el documento cargado, genera un esqueleto detallado para un reporte que pueda responder a la consulta de forma exhaustiva. El esqueleto debe estructurar la información de manera lógica y facilitar la creación de un reporte final completo.
+                 
+                 DOCUMENT INFORMATION
                  {document_info}
+
                  ANSWER FORMAT:
-                 [Un breve analisis del tema y de lo que quiere el usuario]
-                 ```action
-                    <Accion a realizar en lenguaje natural>
-                 ```
-                 ```action
-                    <Otra accion que siga a la anterior>
-                 ```
+                 [Un analisis del tema y de lo que quiere el usuario, de que datos quiere conocer, y que datos extras podrian proporcionarsele para una respuesta mas completa]
+                 [Analisis de la consulta, Identificar los puntos clave de la consulta (qué información busca el usuario explícitamente), Identificar posibles ambigüedades o interpretaciones de la consulta, Definir las métricas o datos específicos necesarios para responder a la consulta]
+                 <Esturctura del Reporte>
+                 ```json
+                 [
+                    'section': {{
+                        'name':[Nombre de la seccion del reporte]
+                        'description':[Breve descripcion de la seccion del reporte]
+                        'data':[brevemente el tipo de información que se va a incluir (ej: "Datos de ventas del producto A", "Gráfico comparativo", "Conclusiones") Indicar si se requieren visualizaciones (gráficos, tablas), y en caso afirmativo, sugerir tipos apropiados (ej: "Gráfico de barras para comparar ventas", "Tabla con datos numéricos detallados")]
+                        'extra_data':[Sugerir información adicional o contextual que pueda enriquecer la respuesta y aportar mayor valor al usuario (datos relevantes que no se solicitaron explícitamente pero podrían ser útiles)]
+                    }},
+                    {{"section": {{
+                        "name": "[Nombre de la siguiente sección]",
+                        "description": "[Descripción de la siguiente sección]",
+                        "data": "[Tipo de información y visualización]",
+                        "extra_data":"[información adicional para esta sección]"
+                    }}
+                    }},...
+                ]
+                ```
 
                  EXAMPLE
-                 User Input: Como se comprtaron las ventas de Ron de Diciembre con respecto a las de Noviembre
+                 User Input: Comparar las ventas del producto A y B en el último trimestre.
 
                  ANSWER:
-                    El usuario quiere comparar las ventas de Ron en Diciembre con las de Noviembre. Para ello, necesitamos:
-                    ```action
-                        Filtrar el dataframe para obtener las ventas de Ron en Diciembre
-                    ```
-                    ```action
-                        Filtrar el dataframe para obtener las ventas de Ron en Noviembre
-                    ```
-                    ```action
-                        Comparar las ventas obtenidas
+
+                    ```json
+                        [
+                            {{
+                                "section": {{
+                                    "name": "Introducción",
+                                    "description": "Breve contexto del reporte de ventas y mención de la comparación solicitada de los productos A y B. Objetivo del reporte: analizar y comparar el rendimiento de ventas de ambos productos.",
+                                    "data": "Contexto general del análisis de ventas",
+                                    "extra_data": "Mencionar la relevancia de comparar estos productos para la estrategia de la empresa"
+                                }}
+                            }},
+                            {{
+                                "section": {{
+                                    "name": "Análisis de la Consulta",
+                                    "description": "Identificar los puntos clave de la consulta y la información requerida",
+                                    "data": "Identificación de la necesidad de comparar las ventas y analizar sus causas",
+                                    "extra_data": "Posible análisis de ventas por región o canal."
+                                }}
+                            }},
+                            {{
+                                "section": {{
+                                    "name": "Datos de Ventas del Producto A (último trimestre)",
+                                    "description": "Presentación detallada de las ventas del Producto A en el último trimestre",
+                                    "data": "Datos numéricos de ventas. Sugerencia: Tabla detallada",
+                                    "extra_data": "Comparación de ventas de A con trimestres anteriores."
+                                }}
+                            }},
+                            {{
+                                "section": {{
+                                    "name": "Datos de Ventas del Producto B (último trimestre)",
+                                    "description": "Presentación detallada de las ventas del Producto B en el último trimestre",
+                                    "data": "Datos numéricos de ventas. Sugerencia: Tabla detallada",
+                                    "extra_data": "Comparación de ventas de B con trimestres anteriores."
+                                }}
+                            }},
+                        {{
+                            "section": {{
+                                    "name": "Gráfico Comparativo de Ventas (A vs B)",
+                                    "description": "Comparación visual de las ventas de A y B",
+                                    "data": "Gráfico de barras para comparar ventas. Sugerencia: Gráfico de barras",
+                                    "extra_data":"Comparación de porcentajes de crecimientos"
+                                }}
+                            }},
+                            {{
+                            "section": {{
+                                    "name": "Tabla Comparativa de Ventas (A vs B)",
+                                    "description": "Tabla con datos comparativos detallados de A y B",
+                                    "data": "Tabla con datos numéricos y porcentajes. Sugerencia: Tabla detallada",
+                                    "extra_data": "Datos de ventas por región"
+                                }}
+                            }},
+                            {{
+                                "section": {{
+                                    "name": "Conclusiones y Análisis",
+                                    "description": "Análisis de los resultados y conclusiones del reporte",
+                                    "data": "Resumen de los hallazgos y conclusiones.",
+                                    "extra_data": "Mencionar limitaciones o posibles investigaciones futuras."
+                                }}
+                            }}
+                        ]
                     ```
 
                  """},
                 {"role": "user", "content": user_query}
             ]
-            skeleton_response = query_llm(skeleton_messages)
-            st.write("**Tareas atómicas identificadas:**", skeleton_response)
+            skeleton_response = query_llm(skeleton_messages).split('```json')[1].split('```')[0]
+            if debug:
+                st.write("**Creado esqueleto del reporte**")
+                with st.expander("Ver esqueleto del reporte"):
+                    for section in json.loads(skeleton_response):
+                        section_name = section["section"]["name"]
+                        section_description = section["section"]["description"]
+                        section_data = section["section"]["data"]
+                        section_extra_data = section["section"]["extra_data"]
+                        st.write(f"**Sección {section_name}**")
+                        st.write(f"**Descripción:** {section_description}")
+                        st.write(f"**Información:** {section_data}")
+            # Paso 3: Generar cada seccion del reporte
+            for section in json.loads(skeleton_response):
+                section_name = section["section"]["name"]
+                section_description = section["section"]["description"]
+                section_data = section["section"]["data"]
+                section_extra_data = section["section"]["extra_data"]
+                section_messages = [
+                    {"role": "system", "content": f"""Teniendo en cuenta los datos del documento siguiente se te ha pedido que generes una seccion de un reporte.
+                    Tu trabajo es solo generar la parte textual de la seccion, para ello necesitas informacion extra, a la cual puedes acceder usando codigo python 
+                     sobre el siguiente documento, el cual se encuentra en un dataframe de pandas llamado "df". 
+                    DOCUMENT INFORMATION
+                    {document_info}
 
-            # Generar código Python para cada tarea atómica
-            atomic_tasks = [action.split("```")[0] for action in skeleton_response.split("```action")[1:]]
-            final_results = {}
+                    ANSWER GUIDE
+                    Los datos que desees recibir al final se deben encontrar en una variable local llamada "response" con una estrucutra de datos adecuada como por ejemplo json.
+                    Si deseas recibir varios datos como por ejemplo valor maximo y minimo de una columna de un dataframe, debes incluirlos todos en la variable "response".
+                    Ten en cuenta de que solo la informacion que necesitas es solo para la parte textual de la seccion del reporte por lo que si quieres ver por ejemplo como se comportaron
+                    las ventas de un año en cuestion, no debes incluir toda la informacion de la base de dato con respecto a las ventas de ese año ya que para el reporte escrito
+                    son demasiados datos, solo debes incluir en la respuesta la informacion importante que puedas sacar con codigo python de estas como maximos minimos media, outlier,
+                    patrones etc.
+                    Solo debes proporcionar un codigo python con todas las instrucciones necesarias para obtener la toda la informacion requerida de una.
+                    NO PUEDES MODIFICAR EL DATAFRAME ORIGINAL ALMACENADO EN "df".
 
-            for task in atomic_tasks:
-                with st.expander(f"Tarea: {task}"):
-                    task_messages = [
-                        {"role": "system", "content": f"""Genera código Python para resolver la siguiente tarea. teniendo en cuenta que las cosultas se realizaran a un dataframe de pandas
-                        llamado df del cual se extrajo la siguiente informacion relevante:
-                        {document_info}
-                        
-                        Hasta Ahora tenomos calculadas las siguientes variables
-                        {final_results}
+                    En caso de que no necesites informacion del dataframe	
 
-                        ANSWER FORMAT:
-                        ```python
-                            <codigo python>
-                        ```
-                        """},
-                        {"role": "user", "content": task}
-                    ]
-                    code_response = query_llm(task_messages)
-                    st.write(f"**{task}**\n {code_response}")
-                    code_response = code_response.split("```python")[1].split('```')[0].strip()
-                    # Ejecutar el código generado
-                    result = execute_code(code_response,final_results)
+                    ANSWER FORMAT:
+                    <Analisis de que datos necesitas conocer para la seccion>
+                    ```python
+                        <CODIGO PYTHON>
+                    ```
+                     """
+                    },
+                    {
+                        "role": "user", "content": f"""
+                        Sección: {section_name}
+                        Descripción: {section_description}
+                        Información: {section_data}
+                        Extra Data: {section_extra_data}
+                    """}
+                ]
 
-                    if "error" in result:
-                        st.error(f"Error al ejecutar la tarea: {task}\n{result['error']}")
+                section_response = query_llm(section_messages).split('```python')[1].split('```')[0]
+
+                response = execute_code(section_response)
+                if debug:
+                    if response:
+                        st.write(f"**Sección {section_name}**")
+                        st.write(response)
                     else:
-                        final_results = result
+                        st.write(f"**Sección {section_name}**")
+                        st.write("No se ha generado ninguna respuesta.")
+                        response = ""
+                # st.altair_chart
+                #Luego de que obtuvimos los datos, generamos la seccion del reporte correspondiente 
+                #Pasandole esos datos al modelo y dandole la posibilidad de gnerar codigo altair para mostrar 
+                #los datos mas generales a partir del dataframe de pandas
+                generate_chart_messages = [
+                    {"role": "system", "content": f"""Teniendo en cuenta los datos del documento siguiente se te ha pedido que generes una o varias graficas o tablas sobre el siguiente documento, el cual se encuentra en un dataframe de pandas llamado "df". 
+                    DOCUMENT INFORMATION
+                    {document_info}
 
-            # Paso 3: Respuesta final
-            final_message = [
-                {"role": "system", "content": f"Genera una respuesta a la siguiente consulta: {user_query} basada en los siguientes resultados."},
-                {"role": "user", "content": str(final_results)}
-            ]
-            final_response = query_llm(final_message)
-            st.write("**Respuesta final:**", final_response)
+                    ANSWER GUIDE
+                    Las graficas o tablas que generes debes ser en codigo altair, libreria que ya esta importada como 'import altair as alt'.
+                    Las graficas o tablas que desees recibir al final se deben encontrar en una variable local llamada "response" el cual debe ser una lista de graficas o tablas altair.
+                    cada elemento de la lista debe ser un diccionario con la siguiente estructura:
+                    {{
+                        'name':<nombre_del_grafico>,
+                        'descripcion':<breve descripcion de que datos muestra este grafico
+                        'c':<objeto altair>
+                    }}
 
-            # Paso 4: Generar visualizaciones
-            if st.checkbox("Generar gráficos/tablas para los resultados"):
-                for result in final_results:
-                    if isinstance(result, pd.DataFrame):
-                        chart = alt.Chart(result).mark_bar().encode(
-                            x=result.columns[0],
-                            y=result.columns[1]
-                        )
-                        st.altair_chart(chart, use_container_width=True)
+                    Ten en cuenta de que solo necesitas las graficas especificas para la seccion actual del reporte, las graficas mas generales son para las secciones de conclusiones o alguna que la requiera especificamente.
+                    
+                    Solo debes proporcionar un codigo python con todas las instrucciones necesarias para obtener todas las graficas requerida de una.
+                    NO PUEDES MODIFICAR EL DATAFRAME ORIGINAL ALMACENADO EN "df".
 
-# Nota sobre la API de Groq
-st.sidebar.info("Usando el modelo 'llama-3.3-70b-versatile' a través de la API de Groq.")
+                    En caso de que la seccion no requiera graficas haz que el codigo python devuelva uen response sea una lista vacia
+
+                    ANSWER FORMAT:
+                    <Analisis de que graficos o tablas serian ilustrativos en esta seccion>
+                    ```python
+                        <CODIGO PYTHON>
+                    ```
+                     """
+                    },
+                    {
+                        "role": "user", "content": f"""
+                        Sección: {section_name}
+                        Descripción: {section_description}
+                        Información: {section_data}
+                        Extra Data: {section_extra_data}
+                    """}
+                ]
+
+                charts_response = query_llm(generate_chart_messages).split('```python')[1].split('```')[0]
+
+                chart_response = execute_code(charts_response)
+                if debug:
+                    if chart_response:
+                        st.write(chart_response)
+                        for c in chart_response:
+                            st.altair_chart(c['c'],use_container_width = True)
+                    else:
+                        st.write("No Chart Generated")
+                
+                charts_names = [{'name':item['name'],'descripcion':item['descripcion']} for item in chart_response]
+                generate_section_messages = [
+                    {"role": "system", "content": f"""Teniendo en cuenta los datos del documento siguiente se te ha pedido que generes una seccion de un reporte.
+
+                    DOCUMENT INFORMATION
+                    {document_info}
+
+                    ANSWER GUIDE
+                    Para generar el reporte lo mas certero posible se te brindan los siguientes datos:
+
+                    {response}
+
+                    Genera la seccion del reporte con la informacion proporcionada, utiliza esos datos para cumplir con las espectativas del reporte en la seccion actual.
+
+                    Para complementar tu respuesta tienes a tu dispocision los siguientes graficos o tablas
+                    {charts_names}
+
+                    Los cuales puedes incluir en tu reporte donde los cosideres oportuno usando la siguiente sintaxis
+                    ```chart
+                        <chart_name>
+                    ```
+                    No es necesario mostrar algun o todos los graficos si estos no son relevates para la seccion actual.
+
+                    ANSWER FORMAT:
+                    <Texto del reporte>
+                    ```chart
+                        <nombre del grafico a insertar>
+                    ```
+                    <Pude seguir el texto del reporte, incluir otro grafico a continuacion o intercalarlos en dependencia de lo que requiera esta seccion del reporte>
+
+                     """
+                    },
+                    {
+                        "role": "user", "content": f"""
+                        Sección: {section_name}
+                        Descripción: {section_description}
+                        Información: {section_data}
+                        Extra Data: {section_extra_data}
+                    """}
+                ]
+
+                final_response = query_llm(generate_section_messages)
+
+                parts = final_response.split("```chart") # Dividimos el string usando ```chart como delimitador
+
+
+                st.write(f"**Sección {section_name}**")
+                for i, part in enumerate(parts):
+                    if i == 0: # La primera parte siempre es texto antes del primer chart (o todo el texto si no hay charts)
+                        if part.strip(): # Verificamos que no este vacio despues de quitar espacios en blanco
+                            st.write(part.strip())
+                    else: # Las partes siguientes vienen despues de un ```chart
+                        chart_block_parts = part.split("```") # Dividimos la parte en subpartes usando ``` como delimitador
+
+                        if len(chart_block_parts) >= 2: # Debe haber al menos 2 partes si hay un bloque chart
+                            chart_name = chart_block_parts[0].strip() # El nombre del chart esta antes del primer ``` de cierre
+                            if chart_name: # Verificamos que el nombre del chart no este vacio
+                                c = None
+                                for item in chart_response:
+                                    if item['name']==chart_name:
+                                        c = item['c']
+                                        break
+                                if c:
+                                    st.altair_chart(c) # Mostramos el chart usando el nombre
+
+                            text_after_chart = chart_block_parts[1] if len(chart_block_parts) > 1 else "" # El texto despues del chart, si existe
+                            if text_after_chart.strip(): # Verificamos que haya texto despues del chart
+                                st.write(text_after_chart.strip())
+                

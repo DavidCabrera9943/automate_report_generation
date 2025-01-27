@@ -60,3 +60,22 @@ El preprocesado se realizará mediante el LLM si es necesario.
 - **Normalización:** Ajuste de escalas y formatos de datos.
 - **Transformación:** Creación de nuevas variables o modificación de las existentes.
 
+## Como generar el reporte
+
+Para generar el reporte lo mas certero posible no podremos simplemente pedirle al LLM que nos responda a la pregunta del usuario en cuestion, ya que esta dara una respuesta totalmente creativa dado que no le estamos proporcionando los datos del documento al LLM. Por lo tanto, vamos a tener que generar paso a paso junto con el llm, o ir giando al LLM para que este vaya generando codigo python capaz de acceder a los datos para que la respuesta del LLM tenga una ase respaldada. Tengase en cuenta tambien que los datos pueden ser de gran tamaño, por lo que no se le puede proveer al LLM de todos los datos en cuestion, dicho esto se nos abren dos posibles soluciones:
+
+- Usar RAG, con una base de vectores y embbeding podremos hacer que el LLM solo tenga acceso a los datos que se encuentren en el espacio  de los embedidngs mas cercanos a la pregunta del usuario, pero esto no seria lo ideal ya que para cosultas generales como por ejemplo como se comportaron las ventas mensuales, es necesario acceder a todos los datos
+
+- Usar un modelo de LLM de generacion de codigo capaz de acceder a los datos del documento, esto nos permitiria generar el reporte de una manera mas eficiente y con menos errores, aprovechando las capacidades de generacion de codigo de los LLM podriamos proveerle a este la estructura de los datos y ciertas reglas o comportamientos que debe seguir a la hora de generar el codigo para acceder a los datos que le sean necesarios para la respuesta.
+
+Siguiendo esta ultima idea necesitamos descomponer el problema en tareas que nos permita seguir esos pasos.
+
+Lo primero que necesitamos es que el modelo interprete la query del usuario y que establezca un esqueleto del reporte a generar con informacion que nos permita saber en cada seccion que datos se van a presentar y de que se va a hablar.
+
+Luego, por cada seccion del esqueleto generado anteriormente necesitaos que el modelo genere la seccion, para ello dividimos la generacion en partes.
+
+- primero se le pide que datos necesita para formular una respuesta (O una seccion en este caso) lo mejor posible, y si no cuenta con esos datos que genere un codigo python que permita acceder a estos datos en cuestion.
+- una vez se tengan esos datos se le pregunta sobre la necesidad de incluir graficos, tablas u otras facilidades que posea altair para mejorar la presentacion de la informacion. En caso de que sea positivo que genere el codigo para esto
+- una vez se tenga la informacion necesaria se le pide que genere la seccion con la informacion que se le haya proporcionado
+
+QUe hacemos despues de que hayamos generado todas las secciones del reporte?
