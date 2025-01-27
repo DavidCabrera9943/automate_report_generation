@@ -1,0 +1,2 @@
+"constraint prompting" y "fact-checking prompting"
+-agregar filas representativas al prompt del LLM, df.head()
