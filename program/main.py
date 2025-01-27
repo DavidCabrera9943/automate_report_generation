@@ -1,5 +1,5 @@
 import streamlit as st
-from groq import Groq
+from groq import Groq,APIError
 import pandas as pd
 import altair as alt
 import os
@@ -167,15 +167,23 @@ def query_llm(messages, model=st.session_state.selected_groq_model, temperature=
     # if a =="N":
     #     return "```python print('Perico')```"
     """Realiza una consulta al modelo LLM usando la API de Groq."""
-    response = client.chat.completions.create(
-        messages=messages,
-        model=model,
-        temperature=temperature,
-        max_tokens=max_tokens
-    )
-    return response.choices[0].message.content
+    try:
+        response = client.chat.completions.create(
+            messages=messages,
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens
+        )
+        return response.choices[0].message.content
+    except APIError as e:
+        st.error(f'Error in Groq Api Call: {e}')
+        
+        return None
+    except Exception as e:
+        st.error(f"Error Inesperado:{e}")
+        return None
 
-def execute_code(code):
+def execute_code(code, retry_count=0, max_retries=1):
     """Ejecuta código Python de manera segura."""
     try:
         print(code)
@@ -186,7 +194,22 @@ def execute_code(code):
         return local_vars.pop('response', None) 
 
     except Exception as e:
+        if retry_count < max_retries:
+            error_message = str(e)
+            corrected_code = debug_and_regenerate_code(code, error_message) # Function to regenerate code
+            if corrected_code:
+                return execute_code(corrected_code, retry_count=retry_count + 1, max_retries=max_retries) # Retry
         return {"error": str(e)}
+    
+def debug_and_regenerate_code(original_code, error_message):
+    debug_messages = [
+        {"role": "system", "content": "You generated Python code that produced an error. Please debug and regenerate the corrected code."},
+        {"role": "user", "content": f"Original code:\n```python\n{original_code}\n```\nError message: {error_message}\nCorrected code:"}
+    ]
+    corrected_code_response = query_llm(debug_messages)
+    if '```python' in corrected_code_response and '```' in corrected_code_response.split('```python')[1]:
+        return corrected_code_response.split('```python')[1].split('```')[0]
+    return None # Could not extract code, or LLM failed to correct
 
 # Interfaz gráfica
 st.title("Generador de Reportes Automatizados con LLM")
@@ -198,13 +221,19 @@ document_file = st.file_uploader("Sube tu documento", type=["txt", "csv", "xlsx"
 #     st.session_state.document_file = document_file
 
 if document_file:
-    with st.spinner("Obteniendo información del documento..."):
-        document_info = get_document_info(document_file)
-        st.success("Documento cargado con éxito.")
+    if st.session_state.get('document_file') != document_file: # Check if a new file is uploaded
+        st.session_state.dataframe = None # Clear old dataframe
+        st.session_state.document_info = None # Clear old document info
+        st.session_state.document_file = document_file # Update the stored file object
 
-    with st.spinner("Preprocesando el documento..."):
-        preprocess_document()
-        st.success("Preprocesamiento completado.")
+    if st.session_state.dataframe is None: # Only process if no dataframe in state
+        with st.spinner("Obteniendo información del documento..."):
+            st.session_state.document_info = get_document_info(document_file) # Store in session state
+            st.success("Documento cargado con éxito.")
+
+        with st.spinner("Preprocesando el documento..."):
+            preprocess_document()
+            st.success("Preprocesamiento completado.")
         
     # Paso 2: Recibir query del usuario
     user_query = st.text_area("Escribe tu consulta:")
@@ -216,7 +245,7 @@ if document_file:
                 {"role": "system", "content": f"""Dada la siguiente consulta del usuario sobre el documento cargado, genera un esqueleto detallado para un reporte que pueda responder a la consulta de forma exhaustiva. El esqueleto debe estructurar la información de manera lógica y facilitar la creación de un reporte final completo.
                  
                  DOCUMENT INFORMATION
-                 {document_info}
+                 {st.session_state.document_info}
 
                  ANSWER FORMAT:
                  [Un analisis del tema y de lo que quiere el usuario, de que datos quiere conocer, y que datos extras podrian proporcionarsele para una respuesta mas completa]
@@ -253,14 +282,6 @@ if document_file:
                                     "description": "Breve contexto del reporte de ventas y mención de la comparación solicitada de los productos A y B. Objetivo del reporte: analizar y comparar el rendimiento de ventas de ambos productos.",
                                     "data": "Contexto general del análisis de ventas",
                                     "extra_data": "Mencionar la relevancia de comparar estos productos para la estrategia de la empresa"
-                                }}
-                            }},
-                            {{
-                                "section": {{
-                                    "name": "Análisis de la Consulta",
-                                    "description": "Identificar los puntos clave de la consulta y la información requerida",
-                                    "data": "Identificación de la necesidad de comparar las ventas y analizar sus causas",
-                                    "extra_data": "Posible análisis de ventas por región o canal."
                                 }}
                             }},
                             {{
@@ -332,7 +353,7 @@ if document_file:
                     Tu trabajo es solo generar la parte textual de la seccion, para ello necesitas informacion extra, a la cual puedes acceder usando codigo python 
                      sobre el siguiente documento, el cual se encuentra en un dataframe de pandas llamado "df". 
                     DOCUMENT INFORMATION
-                    {document_info}
+                    {st.session_state.document_info}
 
                     ANSWER GUIDE
                     Los datos que desees recibir al final se deben encontrar en una variable local llamada "response" con una estrucutra de datos adecuada como por ejemplo json.
@@ -380,7 +401,7 @@ if document_file:
                 generate_chart_messages = [
                     {"role": "system", "content": f"""Teniendo en cuenta los datos del documento siguiente se te ha pedido que generes una o varias graficas o tablas sobre el siguiente documento, el cual se encuentra en un dataframe de pandas llamado "df". 
                     DOCUMENT INFORMATION
-                    {document_info}
+                    {st.session_state.document_info}
 
                     ANSWER GUIDE
                     Las graficas o tablas que generes debes ser en codigo altair, libreria que ya esta importada como 'import altair as alt'.
@@ -431,7 +452,7 @@ if document_file:
                     {"role": "system", "content": f"""Teniendo en cuenta los datos del documento siguiente se te ha pedido que generes una seccion de un reporte.
 
                     DOCUMENT INFORMATION
-                    {document_info}
+                    {st.session_state.document_info}
 
                     ANSWER GUIDE
                     Para generar el reporte lo mas certero posible se te brindan los siguientes datos:
