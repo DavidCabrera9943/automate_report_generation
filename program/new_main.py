@@ -7,7 +7,7 @@ from config import groq_models
 from data_processing import get_document_info, preprocess_document
 from report_generation import generate_report_skeleton, generate_section_data, generate_section_charts, generate_report_section_text
 from llm_api import query_llm
-
+import json
 
 # Sidebar setup
 col1, col2 = st.sidebar.columns(2)
