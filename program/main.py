@@ -206,6 +206,8 @@ def debug_and_regenerate_code(original_code, error_message):
         {"role": "system", "content": "You generated Python code that produced an error. Please debug and regenerate the corrected code."},
         {"role": "user", "content": f"Original code:\n```python\n{original_code}\n```\nError message: {error_message}\nCorrected code:"}
     ]
+    if debug:
+        st.write(debug_messages)
     corrected_code_response = query_llm(debug_messages)
     if '```python' in corrected_code_response and '```' in corrected_code_response.split('```python')[1]:
         return corrected_code_response.split('```python')[1].split('```')[0]
@@ -409,7 +411,7 @@ if document_file:
                     cada elemento de la lista debe ser un diccionario con la siguiente estructura:
                     {{
                         'name':<nombre_del_grafico>,
-                        'descripcion':<breve descripcion de que datos muestra este grafico
+                        'description':<breve descripcion de que datos muestra este grafico
                         'c':<objeto altair>
                     }}
 
@@ -447,7 +449,7 @@ if document_file:
                     else:
                         st.write("No Chart Generated")
                 
-                charts_names = [{'name':item['name'],'descripcion':item['descripcion']} for item in chart_response]
+                charts_names = [{'name':item['name'],'description':item['description']} for item in chart_response]
                 generate_section_messages = [
                     {"role": "system", "content": f"""Teniendo en cuenta los datos del documento siguiente se te ha pedido que generes una seccion de un reporte.
 
