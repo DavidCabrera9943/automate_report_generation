@@ -8,10 +8,10 @@ La arquitectura del sistema propuesto se ha diseñado siguiendo un enfoque modul
 
 \subsection{Interfaz Gráfica de Usuario (GUI) con Streamlit}
 
-La interfaz gráfica de usuario se ha construido utilizando la librería Streamlit ([https://streamlit.io](https://streamlit.io)).  Streamlit se seleccionó por su facilidad de uso,  rapidez de desarrollo y la capacidad de crear interfaces web interactivas y de alta calidad con un mínimo de código Python.  Las características de Streamlit aprovechadas en esta implementación incluyen:
+La interfaz gráfica de usuario se ha construido utilizando la librería Streamlit \cite{streamlit}.  Streamlit se seleccionó por su facilidad de uso,  rapidez de desarrollo y la capacidad de crear interfaces web interactivas y de alta calidad con un mínimo de código Python.  Las características de Streamlit aprovechadas en esta implementación incluyen:
 
 \begin{itemize}
-	\item \textbf{Componentes interactivos:}  Streamlit proporciona una amplia gama de componentes interactivos (botones, sliders, áreas de texto, selectores de archivos, checkboxes, etc.) que facilitan la creación de interfaces de usuario dinámicas y receptivas.  En este proyecto,  se utilizan $`st.file_uploader`$, $`st.text_area`$, $`st.button`$, $`st.checkbox`$, $`st.spinner`$, $`st.expander`$, $`st.altair_chart`$, entre otros.
+	\item \textbf{Componentes interactivos:}  Streamlit proporciona una amplia gama de componentes interactivos (botones, sliders, áreas de texto, selectores de archivos, checkboxes, etc.) que facilitan la creación de interfaces de usuario dinámicas y receptivas.
 	\item \textbf{Renderización de código Altair:}  Streamlit integra la capacidad de renderizar gráficos generados con la librería Altair directamente en la interfaz web,  facilitando la visualización de datos.
 	\item \textbf{Desarrollo rápido y iterativo:}  Streamlit permite un ciclo de desarrollo rápido e iterativo.  Los cambios en el código Python se reflejan automáticamente en la interfaz web al guardar el archivo,  agilizando la experimentación y el prototipado.
 	\item \textbf{Comunidad activa y documentación extensa:}  Streamlit cuenta con una comunidad de usuarios activa y una documentación completa,  lo que facilita la resolución de problemas y el aprendizaje de nuevas funcionalidades.
@@ -20,36 +20,41 @@ La interfaz web desarrollada con Streamlit proporciona una experiencia de usuari
 
 \subsection{Modelos de Lenguaje Utilizados: API de Groq}
 
-La elección del modelo de lenguaje para esta implementación se basó en la premisa de la limitación de recursos computacionales locales para ejecutar modelos de lenguaje de gran escala con un rendimiento adecuado.  En consecuencia,  se optó por utilizar una API gratuita que proporciona acceso a modelos open-source de alto rendimiento: la API de Groq ([https://groq.com](https://groq.com)).
+La elección del modelo de lenguaje para esta implementación se basó en la premisa de la limitación de recursos computacionales locales para ejecutar modelos de lenguaje de gran escala con un rendimiento adecuado.  En consecuencia,  se optó por utilizar una API gratuita que proporciona acceso gratuito a modelos open-source de alto rendimiento: la API de Groq\cite{groq}.
 
 La API de Groq ofrece acceso a una variedad de modelos open-source punteros,  incluyendo:
 
 \begin{itemize}
-	\item \textbf{gemma2-9b-it (Google):}  Modelo de lenguaje desarrollado por Google,  conocido por su eficiencia y buen rendimiento en diversas tareas.
-	\item \textbf{Familia Llama (Meta):}  Varios modelos de la familia Llama,  desarrollados por Meta (anteriormente Facebook),  incluyendo versiones como Llama 2 y Llama 3.  Se destaca el modelo \textbf{llama-3.3-70b-versatile} por sus capacidades demostradas en diversas evaluaciones.
-	\item \textbf{Mixtral-8x7b (Mixtral AI):}  Modelo desarrollado por Mixtral AI,  que ha mostrado un rendimiento competitivo en benchmarks y destaca por su arquitectura Mixture-of-Experts.  En la implementación actual,  se utiliza el modelo \textbf{mixtral-8x7b-32768}.
+	\item \textbf{gemma2-9b-it (Google):}  Modelo de lenguaje desarrollado por Google,  conocido por su eficiencia y buen rendimiento en diversas tareas con un cosumo relativamente bajo de recursos.
+	\item \textbf{Familia Llama (Meta):}  Varios modelos de la familia Llama,  desarrollados por Meta (anteriormente Facebook),  incluyendo versiones como Llama 2 y Llama 3.  Se destaca el modelo \textbf{llama-3.3-70b} por sus capacidades demostradas en diversas evaluaciones\cite{llamavsgpt4}.
+	\item \textbf{Mixtral-8x7b (Mixtral AI):}  Modelo desarrollado por Mixtral AI,  que ha mostrado un rendimiento competitivo en benchmarks y destaca por su arquitectura Mixture-of-Experts.
 \end{itemize}
-La utilización de la API de Groq permite experimentar y comparar el rendimiento de diferentes modelos open-source en la tarea de generación de reportes automatizados,  sin requerir una infraestructura computacional local costosa. En futuras investigaciones,  se podría ampliar la experimentación a otros modelos disponibles en la API de Groq o en otras plataformas,  así como explorar estrategias de fine-tuning de los modelos para optimizar su rendimiento en esta tarea específica.
 
+La utilización de la API de Groq permite experimentar y comparar el rendimiento de diferentes modelos open-source en la tarea de generación de reportes automatizados,  sin requerir una infraestructura computacional local costosa. En futuras investigaciones,  se podría ampliar la experimentación a otros modelos disponibles en la API de Groq o en otras plataformas,  así como explorar estrategias de fine-tuning de los modelos para optimizar su rendimiento en esta tarea específica.
 
 
 \section{Fases Previas a la Consulta del Usuario}
 
-Esta fase inicial se centra en la preparación del entorno y el procesamiento preliminar del documento proporcionado por el usuario. Consta de los siguientes pasos:
+Esta fase inicial se centra en la preparación del entorno y el procesamiento preliminar del documento proporcionado por el usuario. Esta fase consta de los siguientes pasos:
 
 \subsection{Carga del Documento por el Usuario}
 
-El sistema inicia con la carga del documento por parte del usuario a través de la interfaz web desarrollada con Streamlit.  Se implementa un componente de carga de archivos $(`st.file_uploader`)$ que admite diversos formatos de documento comunes para el análisis de datos, incluyendo:
+El sistema inicia con la carga del documento por parte del usuario a través de la interfaz web. Se implementa un componente de carga de archivos el cual forma parte de la librería de streamlit y que admite diversos formatos de documento comunes para el análisis de datos, incluyendo:
 \begin{itemize}
 	\item \textbf{CSV (.csv):}  Formato de valores separados por comas, ampliamente utilizado para datos tabulares.
 	\item \textbf{Excel (.xlsx):}  Formato de hoja de cálculo de Microsoft Excel, capaz de almacenar datos tabulares y fórmulas complejas.
 	\item \textbf{Texto (.txt):}  Formato de texto plano, aunque su soporte es más limitado en la implementación actual y se centra en la extracción de información general del documento para contextualizar al LLM.  [Se podría ampliar el soporte para documentos de texto en futuras iteraciones, implementando técnicas de segmentación y análisis semántico más robustas.]
 \end{itemize}
+
 La flexibilidad en los formatos de entrada busca maximizar la accesibilidad y usabilidad del sistema para usuarios con diferentes tipos de datos.
 
 \subsection{Escaneo e Información del Documento}
 
-Una vez cargado el documento, se procede a un análisis inicial para extraer información relevante que se proporcionará al LLM en etapas posteriores. La función $`get_document_info`$ se encarga de este proceso, adaptándose al tipo de documento cargado.  Para documentos tabulares (CSV, Excel, JSON), se utiliza la librería Pandas para cargar los datos en un DataFrame.  La información extraída incluye:
+Una vez cargado el documento, se procede a un análisis inicial para extraer información relevante que se proporcionará al LLM en etapas posteriores. La función ``get\_document\_info`` se encarga de este proceso, adaptándose al tipo de documento cargado.  Para documentos tabulares (CSV, Excel, JSON), se utiliza la librería Pandas para cargar los datos en un DataFrame, debido a la gran cantidad de funciones que posee esta libreria para un mejor control y analisis de los datos. Esta informacion que se busca extraer del documento en cuestion se busca que sea lo mas corta pero relevante posible ya que debe servir de base para que un LLM tenga una idea del documento en cuestion y como realizar consultas sobre este.
+
+Este enfoque busca emular el comportamiento que seguimos al enfrentarnos a un conjuto de datos que del cual no tenemos infomacion previa. Nosostros como humanos hacemos lo mismo cuando nos enfrentamos a un gran volumne de datos, solo miramos los nombres de las columnas y quizas un par de filas para tener una idea de los tipos de datos con los que estamos trabajando. 
+
+La información extraída incluye:
 
 \begin{itemize}
 	\item \textbf{Nombres de las columnas:}  Se obtienen los nombres de las columnas del DataFrame, proporcionando al LLM el vocabulario básico de los datos.
@@ -57,90 +62,103 @@ Una vez cargado el documento, se procede a un análisis inicial para extraer inf
 	\item \textbf{Valores Mínimos y Máximos por columna (numéricas):} Se calculan los valores mínimo y máximo para cada columna numérica, ofreciendo al LLM una idea del rango y escala de los datos.
 	\item \textbf{Cantidad de Valores Únicos por columna:} Se determina el número de valores únicos en cada columna, lo que puede indicar si una columna es categórica o numérica continua.
 	\item \textbf{Valores Faltantes por columna:} Se cuantifica la cantidad de valores faltantes (NaN) en cada columna, información relevante para que el LLM considere estrategias de imputación o manejo de datos faltantes si es necesario.
+	\item \textbf{Valores de las primeras filas:} Se muestran las primeras filas del DataFrame tal y como vienen para que el LLM determine correctamente como son los datos de cada columna.
 \end{itemize}
-Esta información se estructura en un diccionario JSON $(`document_info`)$ que se utilizará en las interacciones posteriores con el LLM.  [En futuras versiones, se podría considerar la extracción de ejemplos de filas representativas para enriquecer aún más el contexto proporcionado al LLM.]
+Esta información se estructura en un diccionario JSON y se almacenan en una variable ``document\_info`` que se utilizará en las interacciones posteriores con el LLM como parte del prompt.
 
-\subsection{Preprocesamiento del Documento (Opcional)}
+\subsection{Preprocesamiento del Documento}
 
-Dependiendo de la naturaleza del documento y la complejidad de las consultas esperadas, se implementa una fase de preprocesamiento opcional guiada por el LLM. La función $`preprocess_document`$ es la encargada de este proceso, que se divide en dos etapas principales:
+Para una mejor respuesta estadistica, y datos mas fiables, generalmene se necesita hacer un preprocesamiento de los datos recibidos, ya que estos pueden venir de diferentes fuentes, presentar valores faltantes o algunas inconsistencias en el formato de cada columna. Dicho preprocesamiento puede ser completamente basado en reglas, completamente basado en LLM, o un enfoque hibrido.
+
+El procesamiento basado en reglas especifíca que reglas y criterios tener en cuenta a la hora del preprocesamiento, por ejemplo, las reglas pueden dictar que para cierta fila los datos faltantes se rellenen con el valor de la media de la fila o que ciertos valores outliers necesitan ser topados o normalizados. Este metodo es altamente estructurado y necesita un conocimiento profundo de los datos en cuestion.
+
+El preprocesamiento basado en LLM consiste en utilizar un modelo de lenguaje para rellenar o modificar los datos faltantes asi como categorizar o detectar y corregir incosistencias en los datos. Utilizando el poder del los LLMs permite manejar datos que en principio no esten bien estructurados asi como inferir nuevos datos a partir de texto en lenguaje natural como por ejemplo detectar una valoracion de 1-5 basado en un comentario de un usuario.
+
+El problema que presentan estos tipos de preprocesamiento es que vamos a estar trabajando con un conjuto de datos potencialmente muy grande y del cual no se cuenta con informacion previa, por lo que no podriamos tener reglas predefinidas para las columnas ya que no sabemos que datos se representan en ellas y no podriamos utiliazar las capacidades del LLM para el preprocesado dado el limitado contexto que estos presentan.
+
+Es por esto que se decidió utilizar un enfoque híbrido en cuanto al preprocesado, es decir, utilizar las capacidades de generacion de codigo de los LLM y a partir de estas generar las reglas. Construir un preprocesador de este tipo vendria dado por diseñar un sistema que analize un dataset de entrada,y a partir de este entienda que transformaciones y reglas debe seguir para producir el dataset de salida deseado.
+
+La función ``preprocess\_document`` es la encargada de este proceso, y se divide en dos etapas principales:
 
 \begin{enumerate}
-	\item \textbf{Definición de Tareas de Preprocesamiento por el LLM:} Se formula un prompt al LLM solicitándole que analice la información del DataFrame $(`document_info`)$ y sugiera tareas de preprocesamiento relevantes.  El prompt especifica que la respuesta debe ser en formato JSON,  conteniendo una lista de diccionarios, cada uno representando una tarea con detalles como el tipo de tarea, la columna afectada y parámetros adicionales (e.g., formato de fecha).  Las tareas consideradas en el prompt incluyen:
+	\item \textbf{Definición de Tareas de Preprocesamiento por el LLM:} Se formula un prompt al LLM solicitándole que analice la información del DataFrame con la informacion del documento que habiamos recolectado anteriormente y sugiera tareas de preprocesamiento relevantes.  El prompt especifica que la respuesta debe ser en formato JSON,  conteniendo una lista de diccionarios, cada uno representando una tarea con detalles como el tipo de tarea, la columna afectada y parámetros adicionales (e.g., formato de fecha).  Las tareas consideradas en el prompt incluyen:
 	\begin{itemize}
 		\item \textbf{Conversión de Fechas:}  Identificación de columnas que contienen fechas y sugerencia de conversión al tipo `datetime` de Pandas, especificando el formato de fecha si es necesario.
 		\item \textbf{Identificación de Columnas Categóricas:}  Reconocimiento de columnas con un número limitado de valores únicos que podrían ser tratadas como variables categóricas.
 		\item \textbf{Sugerencias para Columnas No Numéricas No Categóricas:}  Detección de columnas no numéricas que no parecen ser categóricas y sugerencias para su filtrado o tratamiento (e.g., columnas de texto libre que no son relevantes para el análisis numérico).
 	\end{itemize}
-	La respuesta del LLM se parsea como JSON y se almacena como $`preprocess_tasks`$. [La lista de tareas de preprocesamiento podría expandirse para incluir tareas más complejas como la imputación de valores faltantes o la normalización de datos en futuras versiones.]
 	
-	\item \textbf{Ejecución de Tareas de Preprocesamiento:}  Se itera sobre la lista de $`preprocess_tasks`$ y se genera código Python dinámicamente para cada tarea.  Este código se ejecuta utilizando la función $`execute_code`$, que utiliza $`exec()`$ para ejecutar el código en un entorno seguro y controlado, pasando el DataFrame `df` y las variables $`final_results`$ (que inicialmente está vacío) como variables locales.  [Actualmente, la ejecución de las tareas de preprocesamiento está incompleta en el código proporcionado.  La lógica para ejecutar efectivamente el código generado y aplicar las transformaciones al DataFrame $`df`$ necesita ser completada.  El código generado para tareas como $'filtrar_no_numerica'$ solo imprime una sugerencia, pero no implementa el filtrado real.  Además, la función $`preprocess_document`$ tiene un $`return`$ prematuro después del primer bucle, impidiendo la ejecución de todas las tareas.] La función $`execute_code`$ está diseñada para ejecutar código Python de forma segura, retornando las variables locales modificadas o un diccionario de error en caso de excepción.
+	\item \textbf{Ejecución de Tareas de Preprocesamiento:}  Se itera sobre la lista de tareas de preprocesado que genero el LLM y se genera código Python dinámicamente para cada tarea.  Este código se ejecuta utilizando la función ``execute\_code``, la cual sirve para ejecutar el código en un entorno seguro y controlado, pasando el DataFrame `df`. El comportamiento de esta funcion se detalla mas adelante.
 	\end{enumerate}
 
 \section{Fase de Procesamiento de la Consulta del Usuario}
 
-Una vez que el documento ha sido cargado y, opcionalmente, preprocesado, el sistema está listo para recibir y procesar las consultas del usuario. Esta fase se compone de los siguientes pasos:
+Una vez que el documento ha sido cargado y preprocesado, el sistema está listo para recibir y procesar las consultas del usuario. Esta fase se compone de los siguientes pasos:
 
 \subsection{Recepción de la Consulta del Usuario}
 
 El usuario introduce su consulta en lenguaje natural a través de un área de texto en la interfaz web. Esta consulta representa la pregunta o solicitud de información que el usuario desea obtener a partir del documento cargado.
 
-\subsection{Skeleton of Thought: Descomposición de la Consulta en Tareas Atómicas}
+\subsection{Skeleton of Thought: Descomposición del Reporte a Generar}
 
-Se implementa la estrategia $"Skeleton of Thought"$ para abordar la complejidad de las consultas.  En lugar de intentar generar una respuesta directa y monolítica,  se solicita al LLM que descomponga la consulta del usuario en una secuencia de tareas atómicas más simples y manejables.  Para ello, se formula un prompt al LLM que incluye:
+Se implementa la estrategia ``Skeleton of Thought`` para abordar la complejidad de las consultas.  En lugar de intentar generar una respuesta directa,  se solicita al LLM que a partir de la cosulta del usuario genera la estructura o ``esqueleto`` del reporte a generar, para esto se le provee al modelo los siguientes datos en el ``prompt``.
 
 \begin{itemize}
 	\item \textbf{La consulta del usuario en lenguaje natural.}
-	\item \textbf{Información relevante sobre el DataFrame $`df`$ (proveniente de $`document_info`$).}
-	\item \textbf{Instrucciones claras sobre el formato de respuesta esperado:}  Se indica al LLM que debe responder con un breve análisis de la consulta y una lista de acciones atómicas,  cada una encapsulada entre delimitadores $```action$ y $```$.  Se proporciona un ejemplo para ilustrar el formato deseado.
+	\item \textbf{Información relevante sobre el DataFrame (proveniente de ``document\_info``).}
+	\item \textbf{Instrucciones claras sobre el formato de respuesta esperado:}  Se indica al LLM que debe responder con un breve análisis de la consulta y una lista de secciones delimitadas dentro de un fragmento de código json. Donde cada seccion se le pide que genere los siguientes datos para un mayor control posterior de la seccion. 
+	\begin{itemize}
+		\item \texttt{'name'}: - Nombre descriptivo de la sección.
+		\item \texttt{'description'}: -  Explicación concisa del propósito de la sección.
+		\item \texttt{'data'}: - Descripción del tipo de información que contendrá la sección.  Indicar si se requieren visualizaciones (gráficos, tablas) y sugerir tipos apropiados (ej: "Gráfico de barras para comparar ventas", "Tabla con datos numéricos detallados").
+		\item \texttt{'extra\_data'}: -  Sugerencias de información adicional que podría enriquecer la sección y aportar valor al usuario.
+	\end{itemize}
 \end{itemize}
-La respuesta del LLM, que contiene el análisis y la lista de tareas atómicas,  se almacena como $`skeleton_response`$ y se muestra en la interfaz web para la revisión del usuario. [La efectividad de la estrategia "Skeleton of Thought" depende en gran medida de la calidad del prompt y la capacidad del LLM para comprender y descomponer consultas complejas.  Se requiere experimentación con diferentes prompts y modelos de lenguaje para optimizar este paso.]
 
-\subsubsection{Generación de Código Python para Tareas Atómicas}
+La respuesta del LLM, que contiene el análisis y la lista de secciones,  se almacena como ``skeleton\_response`` y se muestra en la interfaz web para la revisión del usuario en caso de tener activado el modo depuracion, del cual hablaremos mas adelante.
 
-Para cada tarea atómica identificada en el paso anterior, se solicita al LLM que genere código Python utilizando la librería Pandas para operar sobre el DataFrame $`df`$.  El proceso se repite para cada tarea atómica individualmente.  El prompt formulado al LLM en este paso incluye:
+\subsubsection{Generación de Código Python para obtener datos consisos}
+
+Para cada seccion identificada en el paso anterior, se solicita al LLM que genere código Python utilizando la librería Pandas para operar sobre el DataFrame $`df`$.  El proceso se repite para cada tarea seccion individualmente.  El prompt formulado al LLM en este paso incluye:
 
 \begin{itemize}
-	\item \textbf{La descripción de la tarea atómica en lenguaje natural.}
-	\item \textbf{Información relevante sobre el DataFrame $`df`$ (proveniente de $`document_info`$).}
-	\item \textbf{El estado actual de las variables calculadas previamente ($`final_results`$):}  Esto permite que el LLM genere código que dependa de los resultados de tareas anteriores,  manteniendo la coherencia y el flujo de trabajo.
+	\item \textbf{El nombre, la descripcion, y los datos generados en el proceso de creacion del esqueleto del reporte.}
+	\item \textbf{Información relevante sobre el DataFrame(proveniente de ``document\_info``).}
 	\item \textbf{Instrucciones sobre el formato de respuesta esperado:} Se especifica que el LLM debe responder con código Python encapsulado entre delimitadores.
 \end{itemize}
-La respuesta del LLM, que contiene el código Python para la tarea atómica, se almacena como $`code_response`$ y se muestra en la interfaz web.  El código se extrae del bloque delimitado y se prepara para su ejecución.
+Ademas se utiliza una tecnica llamada ``constraint prompting`` en donde se le restringe las capacidades generativas del LLM a seguir una serie de reglas, en este caso se le pide que el codigo python a generar no puede modificar el dataframe original, que los datos relevantes que desee recuperar los debe almacenar en una variable local llamada ``response``, y que no recupere grandes volumenes de datos, solo la informacion relevante que sea capaz de extraer usando codigo python de estos.
+
+La respuesta del LLM, que contiene el código Python se parsea para determinar solamente la region donde se encuentra el codigo, se almacena como ``code\_response`` y se muestra en la interfaz web en caso de depuracion.
 
 \subsubsection{Ejecución del Código y Obtención de Resultados Intermedios}
 
-El código Python generado para cada tarea atómica se ejecuta utilizando nuevamente la función $`execute_code`$.  Esta función ejecuta el código en un entorno seguro,  pasando el DataFrame $`df$` y el diccionario $`final_results$` (que se actualiza iterativamente con los resultados de cada tarea) como variables locales.  El resultado de la ejecución se almacena en la variable $`result`$.  Si la ejecución es exitosa,  los resultados (que pueden ser DataFrames, series, valores numéricos, etc.) se incorporan al diccionario $`final_results`$,  que se utilizará en las tareas posteriores y en la generación de la respuesta final.  Si ocurre un error durante la ejecución,  se captura el error y se muestra en la interfaz web,  interrumpiendo el proceso. [El manejo de errores y la robustez de la ejecución del código son aspectos críticos.  Se podrían implementar mecanismos más sofisticados de manejo de errores y validación del código generado por el LLM antes de su ejecución.]
+El código Python generado para cada tarea atómica se ejecuta utilizando nuevamente la función ``execute\_code``.  Esta función ejecuta el código en un entorno seguro,  pasando el DataFrame $`df$` como variable local.  El resultado de la ejecución como se le habia pedido al modelo se deben encontrar en la variable local response. Si la ejecución es exitosa,  los resultados (que pueden ser DataFrames, series, valores numéricos, diccionarios, etc.).  Si ocurre un error durante la ejecución,  se captura el error y se muestra en la interfaz web en caso de depuracion y  luego se intenta utilizar nuevamente el LLM para corregir el codigo python en cuestion.
 
-\subsubsection{Generación de la Respuesta Final}
+La funcion ``execute\_code`` contiene un parametro opcional ``max\_retries``, el cual se utiliza para evitar caer en un ciclo infinito donde no se pueda corregir el codigo en cuestion. Para intentar arreglar el codigo se acude nuevamente al modelo del lenguaje, este proceso se realiza mediante la funcion ``debug\_and\_regenerate\_code``, la cual recibe como parametros el codigo que se ejecuto y dio error y el mensaje de error lanzado, y a partir de esos datos se le pide al LLM que genere un nuevo codigo python, el cual automaticamete se parsea y se vuelve a intentar ejecutar.
 
-Una vez que se han ejecutado todas las tareas atómicas y se han recopilado los resultados intermedios en $`final_results`$,  se procede a la generación de la respuesta final a la consulta del usuario.  Se formula un último prompt al LLM que incluye:
+\subsubsection{Generación de Graficos}
+
+Para mejorar la visualizacion de los datos y la calidad de los reportes se hace necesario la inclusion de elementos graficos que permitan al usuario ver y entender una mayor cantidad de datos y su comportamiento. Para la generacion de estos graficos seguimos la misma idea de el punto anterior de obtencion de datos, como no pudemos proveer a los LLM con todo el conjunto de datos para que este renderize una grafica o tabla a partir de esto, lo que hacemos es pedirle que genere codigo python que sea capaz de generar estos graficos.
+
+Para este proposito utilizamos la libreria altair\cite{altair}, una libreria capaz de generar varios tipos de graficos a partir de un dataframe en pandas, estas facilidades unidos a la funcionalidad de streamlit de renderizar dichos graficos directamente en la web con una sola intruccion, hacen de esta libreria una opcion ideal para este trabajo.
+
+En este paso se siguen las mismas ideas, en cuanto a la estructura del prompt, que las vistas en la seccion \textbf{Generación de Código Python para obtener datos consisos}. Con la diferencia que se le hace saber al modelo que la libreria altair ya esta importada como ``alt``, y que las respuestas deben ser una lista de diccionarios que contengan la siguiente informacion:
 
 \begin{itemize}
-	\item \textbf{La consulta original del usuario en lenguaje natural.}
-	\item \textbf{Los resultados intermedios obtenidos de la ejecución de las tareas atómicas ($`final_results`$).}
-	\item \textbf{Instrucciones para generar una respuesta coherente y concisa basada en los resultados proporcionados.}
+	\item \textbf{name} :- Nombre del grafico, este se utiliza luego como un id para acceder al grafico en cuestion.
+	\item \textbf{description} :- Una breve descripcion del grafico en cuestion y los datos que representa para que a la hora de generar la respuesta final a partir de esta informacion el modelo de lenguaje sepa en que posicion ubicarlo.
+	\item \textbf{c} :- Referencia al objeto Altair del grafico.
 \end{itemize}
-La respuesta del LLM, que representa la respuesta final a la consulta del usuario,  se almacena como $`final_response`$ y se muestra en la interfaz web.
 
-\section{Fase de Post-Procesamiento y Visualización de la Respuesta}
+\subsubsection{Generación de la Respuesta Final de la seccion}
 
-Tras obtener la respuesta textual del LLM,  se considera la posibilidad de enriquecer la presentación de los resultados mediante visualizaciones gráficas o tablas,  mejorando la comprensión y el impacto de la información para el usuario.
+Para la generación de la sección final del reporte, se recurre al LLM, al cual se le proporciona toda la información procesada y relevante para la sección en cuestión. Esto incluye los datos extraídos y calculados previamente, la información contextual del documento analizado, y las descripciones de las visualizaciones gráficas generadas. Con el objetivo de facilitar la integración de gráficos dentro del flujo textual del reporte, se instruye al LLM para que utilice una sintaxis inspirada en markdown. Específicamente, se le indica que inserte un bloque de código ```chart <nombre\_del\_gráfico> ``` en aquellos puntos donde considere pertinente incluir una visualización.
 
-\subsection{Generación Opcional de Visualizaciones}
+Una vez obtenida la respuesta del LLM, se procede a analizarla (parsearla) para identificar estos marcadores de gráficos. Posteriormente, estos marcadores son reemplazados programáticamente por las correspondientes gráficas generadas con Altair, permitiendo una integración fluida y dinámica de texto y visualizaciones en la sección del reporte final presentada en Streamlit.
 
-Se implementa una opción para que el usuario solicite la generación de gráficos y tablas para complementar la respuesta textual.  Si el usuario activa esta opción $(`st.checkbox`)$,  se itera sobre los resultados almacenados en $`final_results`$.  Si un resultado es un DataFrame de Pandas,  se asume que es susceptible de ser visualizado gráficamente.  En la implementación actual,  se genera un gráfico de barras básico utilizando la librería Altair $(`alt.Chart`)$.  [La generación de visualizaciones es un área que requiere mayor desarrollo.  Se podrían implementar:
-\begin{itemize}
-	\item \textbf{Selección automática del tipo de gráfico adecuado:}  Dependiendo del tipo de datos y la naturaleza de la consulta,  se podría seleccionar automáticamente el tipo de gráfico más apropiado (barras, líneas, dispersión, pastel, etc.).
-	\item \textbf{Personalización de visualizaciones:}  Ofrecer opciones al usuario para personalizar los gráficos (títulos, etiquetas, colores, etc.).
-	\item \textbf{Generación de tablas:}  Además de gráficos,  generar tablas formateadas para presentar datos de manera tabular cuando sea más adecuado.
-	\item \textbf{Integración más profunda con el LLM:}  Utilizar el LLM para que sugiera visualizaciones relevantes basadas en la consulta y los resultados,  o incluso para generar descripciones textuales de las visualizaciones.]
-\end{itemize}
-Los gráficos generados se renderizan en la interfaz web utilizando $`st.altair_chart`$.
+\section{Experimentos y Líneas de Investigación}
 
-
-\section{Experimentos Futuros y Líneas de Investigación}
-
-La implementación descrita sienta las bases para una serie de experimentos y futuras líneas de investigación que podrían explorar y mejorar las capacidades del sistema.  Algunas áreas de interés incluyen:
+La implementación descrita sienta las bases para una serie de experimentos y líneas de investigación que podrían explorar y mejorar las capacidades del sistema.  Algunas áreas de interés incluyen:
 
 \begin{itemize}
 	\item \textbf{Evaluación comparativa de modelos LLM:}  Realizar una evaluación sistemática comparando el rendimiento de diferentes modelos LLM disponibles en la API de Groq (y otras plataformas) en la tarea de generación de reportes automatizados.  Métricas a considerar podrían incluir la precisión del código generado,  la relevancia y coherencia de las respuestas,  la velocidad de respuesta,  y la calidad de las visualizaciones.
