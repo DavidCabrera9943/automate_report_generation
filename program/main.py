@@ -81,6 +81,10 @@ def get_document_info(document:UploadedFile):
         "missing_values": st.session_state.dataframe.isnull().sum().to_dict(),
         "firsts_rows": st.session_state.dataframe.head().to_dict(),
     }
+    
+    if debug:
+        with st.expander("Document Info"):
+            st.write(info)
 
     return info
 
@@ -102,11 +106,13 @@ def preprocess_document():
         Responde con una lista de diccionarios, donde cada diccionario representa una tarea:
         ```json
         [
-            {"tarea": "convertir_fecha", "columna": "nombre_columna", "formato": "formato_fecha"},
+            {"tarea": "convertir_fecha", "columna": "nombre_columna"},
             {"tarea": "identificar_categorica", "columna": "nombre_columna"},
             {"tarea": "filtrar_no_numerica", "columna": "nombre_columna", "sugerencia": "sugerencia_filtro"}
+            {"tarea": "pandas","codigo":"codigo pandas para realizar el procesado del dataframe almacenado en df, este se ejecuta para realizar una tarea que no sea del tipo de las antes descritas"}
         ]
         ```
+
         """},
         {"role": "user", "content": f"""
             Información del DataFrame:
@@ -117,11 +123,17 @@ def preprocess_document():
     ]
 
     tasks_json = query_llm(preprocess_tasks_messages)
+    tasks_json = tasks_json.split("```json")[1].split('```')[0]
+    print(tasks_json)
     try:
         preprocess_tasks = json.loads(tasks_json)
     except json.JSONDecodeError as e:
         return {"error": f"Error al parsear la respuesta del LLM: {e}"}
 
+    
+    if debug:
+        with st.expander("Tareas de Preprocesado"):
+            st.write(preprocess_tasks)
 
     # 2. Ejecutar cada tarea
     for task in preprocess_tasks:
@@ -132,40 +144,33 @@ def preprocess_document():
             return {"error": f"Nombre de columna inválido: {column_name}"}
 
         if task_name == "convertir_fecha":
-            date_format = task.get("formato")
-            preprocess_code = f"""
-            st.session_state.dataframe['{column_name}'] = pd.to_datetime(st.session_state.dataframe['{column_name}'], format='{date_format}')
+            preprocess_code = f"""import pandas as pd\ndf['{column_name}'] = pd.to_datetime(st.session_state.dataframe['{column_name}'], errors='coerce')\ndf = df.dropna(subset=['{column_name}'])
             """
         elif task_name == "identificar_categorica":
-            preprocess_code = f"""
-            categorias = st.session_state.dataframe['{column_name}'].unique().tolist()
-            # Aquí se podría añadir código para manejar las categorías (e.g., convertir a tipo 'category')
-            print(f"Categorías de '{column_name}': {{categorias}}") 
+            preprocess_code = f"""categorias = df['{column_name}'].unique().tolist()\ndf['{column_name}'] = df['{column_name}'].astype('category')\n# Aquí se podría añadir código para manejar las categorías (e.g., convertir a tipo 'category')
+             
             """
         elif task_name == "filtrar_no_numerica":
             suggestion = task.get("sugerencia")
-            preprocess_code = f"""
-            # Sugerencia para filtrar '{column_name}': {suggestion}
-            # Implementa la lógica de filtrado según la sugerencia
+            preprocess_code = f"""# Sugerencia para filtrar '{column_name}': {suggestion}\n# Implementa la lógica de filtrado según la sugerencia
             """  # El usuario deberá implementar la lógica
+        elif task_name == "pandas":
+            preprocess_code = task.get("codigo")
         else:
-            return {"error": f"Tarea de preprocesamiento desconocida: {task_name}"}
+            print( {"error": f"Tarea de preprocesamiento desconocida: {task_name}"})
         print("^^^^^^^^^^^^^^^^^")
         print(preprocess_code)
         print("^^^^^^^^^^^^^^^^^")
-        return
+        
         try:
-            exec(preprocess_code, globals())
+            execute_code(preprocess_code)
         except Exception as e:
+            print(f"Error al ejecutar la tarea '{task_name}' en la columna '{column_name}': {e}")
             return {"error": f"Error al ejecutar la tarea '{task_name}' en la columna '{column_name}': {e}"}
-
+    print("SIUUUUU")
     return {"success": "Preprocesamiento completado"}
 
 def query_llm(messages, model=st.session_state.selected_groq_model, temperature=0.5, max_tokens=1024):
-    # print(messages)
-    # a = input("Should make this request:[Y/N]")
-    # if a =="N":
-    #     return "```python print('Perico')```"
     """Realiza una consulta al modelo LLM usando la API de Groq."""
     try:
         response = client.chat.completions.create(
@@ -203,7 +208,7 @@ def execute_code(code, retry_count=0, max_retries=1):
     
 def debug_and_regenerate_code(original_code, error_message):
     debug_messages = [
-        {"role": "system", "content": "You generated Python code that produced an error. Please debug and regenerate the corrected code."},
+        {"role": "system", "content": "You generated Python code that produced an error. Please debug and regenerate the corrected code. There are a df variable with the dataframe already defined"},
         {"role": "user", "content": f"Original code:\n```python\n{original_code}\n```\nError message: {error_message}\nCorrected code:"}
     ]
     if debug:
@@ -234,8 +239,10 @@ if document_file:
             st.success("Documento cargado con éxito.")
 
         with st.spinner("Preprocesando el documento..."):
-            preprocess_document()
-            st.success("Preprocesamiento completado.")
+            if preprocess_document().get("error",None):
+                st.error("Error al preprocesar el documento")
+            else: 
+                st.success("Preprocesamiento completado.")
         
     # Paso 2: Recibir query del usuario
     user_query = st.text_area("Escribe tu consulta:")
