@@ -180,7 +180,7 @@ def preprocess_document():
 
 
         if task_name == "convertir_fecha":
-            preprocess_code = f"""import pandas as pd\ndf['{column_name}'] = pd.to_datetime(st.session_state.dataframe['{column_name}'], errors='coerce')\ndf = df.dropna(subset=['{column_name}'])
+            preprocess_code = f"""import pandas as pd\ndf['{column_name}'] = pd.to_datetime(df['{column_name}'], errors='coerce')\ndf = df.dropna(subset=['{column_name}'])
             """
         elif task_name == "identificar_categorica":
             preprocess_code = f"""categorias = df['{column_name}'].unique().tolist()\ndf['{column_name}'] = df['{column_name}'].astype('category')\n# Aquí se podría añadir código para manejar las categorías (e.g., convertir a tipo 'category')

@@ -67,4 +67,51 @@ A partir de los datos de informacion obtenidos anteriormente se le pide al LLM q
 
 Como podemos ver el modelo genero un json con un arreglo de tareas de preprocesado a realizar, destacando entre estas eliminar la columna vin, valores de precion de venta negaticvos y valores de condicion extrema. Esto nos permite ver que el proceso de extraccion de informacion que realizamos anteriormente dio buenos resultados ya que el modelo ha podido inferir las columnas relevantes, el rango en que estas se comportan y que valores pudieran ser 'ruido' en el dataset.
 
-Una vez que se realize el preprocesamiento se le notificara al usuario el resultado del mismo si fue satisfactori o ocurrio algun error, en cualquier caso aparecera bajo estas notificaciones un cuadro de texto donde se le pide que inserte una consulta. La consulta debe ser en lenguaje natural y relacionada con el documento que se acaba de subir. Ademas se le sugiere al usuario 3 posibles consultas a realizar
+Una vez que se realize el preprocesamiento se le notificara al usuario el resultado del mismo si fue satisfactori o ocurrio algun error, en cualquier caso aparecera bajo estas notificaciones un cuadro de texto donde se le pide que inserte una consulta. La consulta debe ser en lenguaje natural y relacionada con el documento que se acaba de subir. Ademas se le sugiere al usuario 3 posibles consultas a realizar teniendo en cuenta el documento subido.
+
+Para probar las capacidades del LLM le pediremos que haga un reporte de ventas de la marca Kia en el 2014. Esta consulta nos permitira ver si el modelo es capza de filtrar los datos que necesita para elaborar la respuesta, asi como si puede generar graficos relevantes que acompañen la informacion antes recibida.
+
+\section{Generando el reporte}
+Cuando cargamos el documento y este termina de ser preprocesado le hacemos la sigiente consulta:
+
+Como se comportaron las ventas de kia en 2014 en relacion a las del año anterior
+
+A lo cual el primer paso que da el modelo es generara el esqueleto del reporte, donde para cada seccion debe ademas del nombre de da seccion proporcionar una descripcion y alguna informacion de la como estructurar los graficos o alguna sugerencia de como deberian ser o que datos debe mostrar.
+
+En este caso el modelo nos proporciono el siguiente esqueleto:
+
+Sección Introducción
+
+Descripción: Breve contexto del análisis de las ventas de Kia en 2014 y comparación con 2013
+
+Información: Contexto general del análisis de ventas
+
+Sección Ventas de Kia en 2014
+
+Descripción: Presentación detallada de las ventas de Kia en 2014
+
+Información: Datos numéricos de ventas en 2014. Sugerencia: Tabla detallada
+
+Sección Ventas de Kia en 2013
+
+Descripción: Presentación detallada de las ventas de Kia en 2013
+
+Información: Datos numéricos de ventas en 2013. Sugerencia: Tabla detallada
+
+Sección Comparación de Ventas entre 2013 y 2014
+
+Descripción: Comparación de las ventas de Kia en 2013 y 2014
+
+Información: Gráfico de barras para comparar las ventas en 2013 y 2014. Sugerencia: Gráfico de barras
+
+Sección Análisis de la Tendencia de las Ventas
+
+Descripción: Análisis de la tendencia de las ventas de Kia en 2014 en comparación con 2013
+
+Información: Análisis de la tendencia de las ventas (aumento, disminución o estabilidad)
+
+Sección Conclusiones y Recomendaciones
+
+Descripción: Resumen de los hallazgos y conclusiones del análisis de las ventas de Kia en 2014
+
+Información: Resumen de los hallazgos y conclusiones
