@@ -21,4 +21,50 @@ Antes de describir las características principales del dataset, es fundamental 
 	
 	\item{Razonamiento sobre Datos Heterogéneos:}
 	Las columnas combinan datos categóricos, numéricos y textuales, lo que pone a prueba la capacidad del modelo para generalizar y extraer patrones útiles.
+	
+	\item{Gran cantidad de datos:}
+	El dataset cuenta con cerca de 600 mil entradas lo cual hace que rea imposible pasarse completamente como contexto de niguno de los modelos de lenguajes en la actualidad.
 \end{itemize}
+
+\section{Interfaz}
+Cuando accedemos al sitio web que nos proporciona streamlit cuando ejecutamos el programa nos encontramos con Nos encontramos con una pagina web que consta de dos columnas principales, una columna central mas espaciosa que seria el contenido principal de lapagina y una columna lateral a la izquierda que seria la columna de configuracion.
+
+\subsection{Columna de configuracion}
+La columna de configuracion es una pequeña columna lateral que nos permite cofugurar que modelo de los que nos provee la API de Groq vamos a estar utilizando ademas de un slider que nos permite seleccionar la cantidad de tokens maximos a generar por el model. Esto nos permite un mayor control sobre los llamados de la API y poder mantenernos dentro de los limites que nos impone el sitio web.
+
+Esta columna ademas cuenta con un checkbox que por defecto se encuentra desabilitado llamado Debug, el cual si lo activamos nos abre una nueva columna a la derecha de la collumna principal con el contenido paso a paso de todo lo que se va realizando. En esta columna se muestran las llamadas y las respuestas del LLM, los resultado de las ejecuciones de los codigos generados, el proceso de preprocesado detallando cada una de las tareas que se identificaron y practicamente todo lo que va ocurriendo mientras se va generando el reporte.
+
+\subsection{Culumna Principal}
+La culumna principan cuenta con un encabezado con el nombre \textbf{Generador de Reportes Automatizados con LLM} y bajo este un componente de carga de archivo, que permite tanto la carga mediante la interfaz de carga de archivo propia de cada sistema operativo como la facilidad de simplementa arrastrar y soltar un archivo para su carga. Una vez que se carga el archivo comienza el proceso de extraer los datos relevantes del mismo.
+
+A partir de los datos de informacion obtenidos anteriormente se le pide al LLM que cree una lista de tareas de preprocesado, dichas tareas pueden ir desde tareas predefinidas como marcar una columna como categorica o convertir una columna con fechas a objetos de fecha de python, a tareas mas complejas para las cuales se le pide que proporcione el codigo pandas correspondiente. En el caso que estamos analizando la lista de tareas que el modelo ejecuto fueron las siguientes:
+
+
+\definecolor{jsoncolor}{rgb}{0.12,0.55,0.82}
+
+\begin{lstlisting}
+		{"tarea": "convertir_fecha", "columna": "saledate"}, 
+		{"tarea": "identificar_categorica", "columna": "make"}, 
+		{"tarea": "identificar_categorica", "columna": "model"}, 
+		{"tarea": "identificar_categorica", "columna": "trim"}, 
+		{"tarea": "identificar_categorica", "columna": "body"}, 
+		{"tarea": "identificar_categorica", "columna": "transmission"}, 
+		{"tarea": "identificar_categorica", "columna": "state"}, 
+		{"tarea": "identificar_categorica", "columna": "condition"}, 
+		{"tarea": "identificar_categorica", "columna": "color"}, 
+		{"tarea": "identificar_categorica", "columna": "interior"}, 
+		{"tarea": "identificar_categorica", "columna": "seller"}, 
+		{"tarea": "filtrar", "columna": "vin", "sugerencia": "Eliminar columna, no se utiliza para el analisis"}, 
+		{"tarea": "filtrar", "columna": "odometer", "sugerencia": "Filtrar valores outliers"}, 
+		{"tarea": "filtrar", "columna": "condition", "sugerencia": "Filtrar valores outliers"}, 
+		{"tarea": "filtrar", "columna": "mmr", "sugerencia": "Eliminar filas con datos faltantes"}, 
+		{"tarea": "filtrar", "columna": "sellingprice", "sugerencia": "Eliminar filas con datos faltantes"}, 
+		{"tarea": "pandas", "codigo": "df = df[df.condition < 50] # Filtrar condicion extrema"}, 
+		{"tarea": "pandas", "codigo": "df = df[df.odometer < 50000] # Filtrar kilometraje extremo"}, 
+		{"tarea": "pandas", "codigo": "df = df[df.mmr > 0] # Filtrar valores negativos de MMR"}, 
+		{"tarea": "pandas", "codigo": "df = df[df.sellingprice > 0] # Filtrar valores negativos de precio de venta"} ]
+\end{lstlisting}
+
+Como podemos ver el modelo genero un json con un arreglo de tareas de preprocesado a realizar, destacando entre estas eliminar la columna vin, valores de precion de venta negaticvos y valores de condicion extrema. Esto nos permite ver que el proceso de extraccion de informacion que realizamos anteriormente dio buenos resultados ya que el modelo ha podido inferir las columnas relevantes, el rango en que estas se comportan y que valores pudieran ser 'ruido' en el dataset.
+
+Una vez que se realize el preprocesamiento se le notificara al usuario el resultado del mismo si fue satisfactori o ocurrio algun error, en cualquier caso aparecera bajo estas notificaciones un cuadro de texto donde se le pide que inserte una consulta. La consulta debe ser en lenguaje natural y relacionada con el documento que se acaba de subir. Ademas se le sugiere al usuario 3 posibles consultas a realizar
