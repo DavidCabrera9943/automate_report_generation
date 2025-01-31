@@ -72,46 +72,105 @@ Una vez que se realize el preprocesamiento se le notificara al usuario el result
 Para probar las capacidades del LLM le pediremos que haga un reporte de ventas de la marca Kia en el 2014. Esta consulta nos permitira ver si el modelo es capza de filtrar los datos que necesita para elaborar la respuesta, asi como si puede generar graficos relevantes que acompañen la informacion antes recibida.
 
 \section{Generando el reporte}
-Cuando cargamos el documento y este termina de ser preprocesado le hacemos la sigiente consulta:
+Cuando cargamos el documento y este termina de ser preprocesado le hacemos la siguiente consulta:
 
-Como se comportaron las ventas de kia en 2014 en relacion a las del año anterior
+\textit{Como se comportaron las ventas de kia en 2014 en relacion a las del año anterior}
 
-A lo cual el primer paso que da el modelo es generara el esqueleto del reporte, donde para cada seccion debe ademas del nombre de da seccion proporcionar una descripcion y alguna informacion de la como estructurar los graficos o alguna sugerencia de como deberian ser o que datos debe mostrar.
+A lo cual el primer paso que da el modelo es generar el \textbf{esqueleto del reporte}, donde para cada sección debe ademas del nombre de la sección proporcionar una descripción y alguna información de la como estructurar los gráficos o alguna sugerencia de como deberían ser o que datos debe mostrar.
 
-En este caso el modelo nos proporciono el siguiente esqueleto:
+En este caso el modelo nos proporcionó el siguiente esqueleto:
 
-Sección Introducción
+\noindent\colorbox{gray!5}{ % Fondo gris muy claro
+	\noindent\fbox{ % Cuadro
+		\begin{minipage}{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}
+			\begin{description}
+				\item[\textbf{Sección Introducción}]
+				\begin{itemize}
+					\item \textbf{Descripción:} Breve contexto del análisis de las ventas de Kia en 2014 y comparación con 2013
+					\item \textbf{Información:} Contexto general del análisis de ventas
+				\end{itemize}
+				\item[\textbf{Sección Ventas de Kia en 2014}]
+				\begin{itemize}
+					\item \textbf{Descripción:} Presentación detallada de las ventas de Kia en 2014
+					\item \textbf{Información:} Datos numéricos de ventas en 2014. Sugerencia: Tabla detallada
+				\end{itemize}
+				\item[\textbf{Sección Ventas de Kia en 2013}]
+				\begin{itemize}
+					\item \textbf{Descripción:} Presentación detallada de las ventas de Kia en 2013
+					\item \textbf{Información:} Datos numéricos de ventas en 2013. Sugerencia: Tabla detallada
+				\end{itemize}
+				\item[\textbf{Sección Comparación de Ventas entre 2013 y 2014}]
+				\begin{itemize}
+					\item \textbf{Descripción:} Comparación de las ventas de Kia en 2013 y 2014
+					\item \textbf{Información:} Gráfico de barras para comparar las ventas en 2013 y 2014. Sugerencia: Gráfico de barras
+				\end{itemize}
+				\item[\textbf{Sección Análisis de la Tendencia de las Ventas}]
+				\begin{itemize}
+					\item \textbf{Descripción:} Análisis de la tendencia de las ventas de Kia en 2014 en comparación con 2013
+					\item \textbf{Información:} Análisis de la tendencia de las ventas (aumento, disminución o estabilidad)
+				\end{itemize}
+				\item[\textbf{Sección Conclusiones y Recomendaciones}]
+				\begin{itemize}
+					\item \textbf{Descripción:} Resumen de los hallazgos y conclusiones del análisis de las ventas de Kia en 2014
+					\item \textbf{Información:} Resumen de los hallazgos y conclusiones
+				\end{itemize}
+			\end{description}
+		\end{minipage}
+}}
 
-Descripción: Breve contexto del análisis de las ventas de Kia en 2014 y comparación con 2013
+A partir de este esqueleto, se empiezan a generar el reporte seccion por seccion. El primer paso para crear la seccion como habiamos planteado en el capitulo anterior es obtener datos del dataframe mediante un codigo python generado por el LLM. En esta ocasion el modelo genero el siguiente codigo.
 
-Información: Contexto general del análisis de ventas
 
-Sección Ventas de Kia en 2014
+\begin{lstlisting}
+	import pandas as pd
+	
+	# Suponemos que el dataframe 'df' ya esta cargado
+	
+	# Calculamos el numero de ventas de Kia en 2014 y 2013
+	ventas_2014 = len(df[(df['year'] == 2014) & (df['make'] == 'Kia')])
+	ventas_2013 = len(df[(df['year'] == 2013) & (df['make'] == 'Kia')])
+	
+	# Calculamos el porcentaje de aumento o disminucion de ventas
+	if ventas_2013 != 0:
+	porcentaje_cambio = ((ventas_2014 - ventas_2013) / ventas_2013) * 100
+	else:
+	porcentaje_cambio = 0
+	
+	# Creamos un diccionario con la informacion necesaria para la seccion de introduccion
+	response = {
+		'ventas_2014': ventas_2014,
+		'ventas_2013': ventas_2013,
+		'porcentaje_cambio': porcentaje_cambio,
+		'relevancia': 'El analisis de las ventas de Kia en 2014 y 2013 es relevante para entender el comportamiento del mercado y la estrategia de la empresa en ese periodo.'
+	}
+	
+	print(response)
+\end{lstlisting}
 
-Descripción: Presentación detallada de las ventas de Kia en 2014
+Notese que el modelo esta identificando correctamente que es lo que queremos y que datos necesitamos para esta introduccion, en este caso decidio obtener el numero total de ventas de ambos años y el porcentaje de cambio de un año al otro. El modelo ademas tuvo una ligera impresicion en este codigo ya que returna tambien un string de relevancia, el  cual parece ser una anotacion para generar el reporte donde destaca que el analisis de venta de estos anos es relevante para obtener el comportamiento del mercado.
 
-Información: Datos numéricos de ventas en 2014. Sugerencia: Tabla detallada
+El segundo paso para la generacion de una seccion era identificar y generar graficos que pudieran servir para un mejor anlisis por parte del usuario para los datos antes recogido. En esta ocasion el modelo luego de generar un codigo erroneo en primera instancia, fue capaz de generar los siguientes graficos.
 
-Sección Ventas de Kia en 2013
+\begin{figure}[H] % Usamos h! para forzar la posición aquí si es necesario, pero considera htbp para más flexibilidad
+	\centering % Centrar todo el conjunto de figuras horizontalmente
+	\begin{minipage}{0.48\textwidth} % Ajusta el ancho según necesites (ej. 0.48 para dejar espacio entre figuras)
+		\centering
+		\includegraphics[height=150px]{grafica_anual.png} % Reemplaza con tu archivo real
+		\caption{Número total de ventas de Kia por año}
+		\label{fig:ejemplo_introduccion_grafico_anual}
+	\end{minipage}
+	\begin{minipage}{0.48\textwidth} % Ajusta el ancho según necesites
+		\centering
+		\includegraphics[height=150px]{grafica_mensual.png} % Reemplaza con tu archivo real
+		\caption{Distribución de ventas de Kia por mes}
+		\label{fig:ejemplo_introduccion_grafico_mensual}
+	\end{minipage}
+\end{figure}
 
-Descripción: Presentación detallada de las ventas de Kia en 2013
+Error detectado en la primera ejecucion del codigo generado
+\textbf{\textit{Error message: Tz-aware datetime.datetime cannot be converted to datetime64 unless utc=True, at position 127}}
 
-Información: Datos numéricos de ventas en 2013. Sugerencia: Tabla detallada
+Luego cuando se le pide al modelo que utilizando los datos obtenidos y estos graficos genere la seccion del reporte, nos muestra ahora si en la columna principal la primera seccion del reporte.
+//IMAGEN DE LA SECCION
 
-Sección Comparación de Ventas entre 2013 y 2014
-
-Descripción: Comparación de las ventas de Kia en 2013 y 2014
-
-Información: Gráfico de barras para comparar las ventas en 2013 y 2014. Sugerencia: Gráfico de barras
-
-Sección Análisis de la Tendencia de las Ventas
-
-Descripción: Análisis de la tendencia de las ventas de Kia en 2014 en comparación con 2013
-
-Información: Análisis de la tendencia de las ventas (aumento, disminución o estabilidad)
-
-Sección Conclusiones y Recomendaciones
-
-Descripción: Resumen de los hallazgos y conclusiones del análisis de las ventas de Kia en 2014
-
-Información: Resumen de los hallazgos y conclusiones
+A partir de aqui se generan el resto de secciones de la misma forma.

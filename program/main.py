@@ -6,6 +6,7 @@ import os
 import io
 from streamlit.runtime.uploaded_file_manager import UploadedFile
 import json
+import time
 
 # Configuración inicial
 client = Groq()
@@ -211,9 +212,9 @@ def preprocess_document():
                     st.write("DataFrame before execution:")
                     st.dataframe(st.session_state.dataframe.head())
 
-            local_vars = {'df': st.session_state.dataframe}
-            exec(preprocess_code, {}, local_vars)
-            st.session_state.dataframe = local_vars['df'] # Update dataframe in session state
+            # local_vars = {'df': st.session_state.dataframe}
+            execute_code(preprocess_code)
+            # st.session_state.dataframe = local_vars['df'] # Update dataframe in session state
 
             if debug:
                 with debug_col:
@@ -233,29 +234,40 @@ def preprocess_document():
     return {"success": "Preprocesamiento completado"}
 
 def query_llm(messages, model=st.session_state.selected_groq_model, temperature=0.5, max_tokens=1024):
-    """Realiza una consulta al modelo LLM usando la API de Groq."""
-    try:
-        response = client.chat.completions.create(
-            messages=messages,
-            model=model,
-            temperature=temperature,
-            max_tokens=max_tokens
-        )
-        if debug:
-            with debug_col:
-                with st.expander("LLM Request/Response"):
-                    st.write("**Request Messages:**")
-                    st.json(messages)
-                    st.write("**Response Content:**")
-                    st.write(response.choices[0].message.content)
-        return response.choices[0].message.content
-    except APIError as e:
-        st.error(f'Error in Groq Api Call: {e}')
+    """Realiza una consulta al modelo LLM usando la API de Groq, con reintentos."""
+    max_retries = 5
+    retry_delay_seconds = 60  # 1 minuto
 
-        return None
-    except Exception as e:
-        st.error(f"Error Inesperado:{e}")
-        return None
+    for attempt in range(max_retries):
+        try:
+            response = client.chat.completions.create(
+                messages=messages,
+                model=model,
+                temperature=temperature,
+                max_tokens=max_tokens
+            )
+            if debug: # Asumiendo que 'debug' está definido en tu contexto
+                with debug_col: # Asumiendo que 'debug_col' está definido en tu contexto
+                    with st.expander(f"LLM Request/Response - Attempt {attempt+1} (Success)"):
+                        st.write("**Request Messages:**")
+                        st.json(messages)
+                        st.write("**Response Content:**")
+                        st.write(response.choices[0].message.content)
+            return response.choices[0].message.content  # Retorna el contenido si la llamada es exitosa
+
+        except APIError as e:
+            if attempt < max_retries - 1: # Intenta de nuevo si no es el último intento
+                st.warning(f'Error en llamada a la API de Groq (Intento {attempt+1}/{max_retries}): {e}. Reintentando en {retry_delay_seconds} segundos...')
+                time.sleep(retry_delay_seconds)
+            else: # Si es el último intento y falla, muestra el error final
+                st.error(f'Error en llamada a la API de Groq después de {max_retries} intentos: {e}')
+                return None
+
+        except Exception as e: # Captura otros errores inesperados
+            st.error(f"Error Inesperado en llamada a la API de Groq (Intento {attempt+1}/{max_retries}): {e}")
+            return None
+
+    return None
 
 def execute_code(code, retry_count=0, max_retries=1):
     """Ejecuta código Python de manera segura."""
@@ -544,14 +556,16 @@ with main_col: # Place main content in main_col
                     if debug:
                         with debug_col: # Output to debug column
                             st.write(f"**Sección {section_name} - Chart Code Execution Response**")
-                            if chart_response:
+                            if chart_response and type(chart_response) == list:
                                 st.write(chart_response)
                                 for c in chart_response:
                                     st.altair_chart(c['c'],use_container_width = True)
                             else:
                                 st.write("No Chart Generated")
-
-                    charts_names = [{'name':item['name'],'description':item['description']} for item in chart_response if chart_response] #Handle case when chart_response is None
+                    if chart_response and type(chart_response) == list:
+                        charts_names = [{'name':item['name'],'description':item['description']} for item in chart_response if chart_response] #Handle case when chart_response is None
+                    else:
+                        charts_names = "Para esta seccion no cuentas con graficos para mostrar"
                     generate_section_messages = [
                         {"role": "system", "content": f"""Teniendo en cuenta los datos del documento siguiente se te ha pedido que generes una seccion de un reporte.
 
