@@ -108,8 +108,8 @@ def preprocess_document():
         [
             {"tarea": "convertir_fecha", "columna": "nombre_columna"},
             {"tarea": "identificar_categorica", "columna": "nombre_columna"},
-            {"tarea": "filtrar_no_numerica", "columna": "nombre_columna", "sugerencia": "sugerencia_filtro"}
-            {"tarea": "pandas","codigo":"codigo pandas para realizar el procesado del dataframe almacenado en df, este se ejecuta para realizar una tarea que no sea del tipo de las antes descritas"}
+            {"tarea": "filtrar", "columna": "nombre_columna", "sugerencia": "sugerencia filtro para la columna, puede ser simplemene eliminar la columna, eliminar filas con datos faltantes o filtrar valores outliers"}
+            {"tarea": "pandas","codigo":"codigo pandas para realizar el procesado del dataframe almacenado en df, este se ejecuta para realizar una tarea mas compleja, que no sea convertir_fecha,identificar_categorica,o filtrar"}
         ]
         ```
 
@@ -137,11 +137,10 @@ def preprocess_document():
 
     # 2. Ejecutar cada tarea
     for task in preprocess_tasks:
-        task_name = task.get("tarea")
-        column_name = task.get("columna")
+        print(task)
+        task_name = task.get("tarea","pandas")
+        column_name = task.get("columna","")
 
-        if not column_name or column_name not in st.session_state.dataframe.columns:
-            return {"error": f"Nombre de columna inválido: {column_name}"}
 
         if task_name == "convertir_fecha":
             preprocess_code = f"""import pandas as pd\ndf['{column_name}'] = pd.to_datetime(st.session_state.dataframe['{column_name}'], errors='coerce')\ndf = df.dropna(subset=['{column_name}'])
@@ -164,9 +163,11 @@ def preprocess_document():
         
         try:
             execute_code(preprocess_code)
+            print("Executed")
         except Exception as e:
             print(f"Error al ejecutar la tarea '{task_name}' en la columna '{column_name}': {e}")
             return {"error": f"Error al ejecutar la tarea '{task_name}' en la columna '{column_name}': {e}"}
+        
     print("SIUUUUU")
     return {"success": "Preprocesamiento completado"}
 
@@ -196,6 +197,7 @@ def execute_code(code, retry_count=0, max_retries=1):
         local_vars = {'df': st.session_state.dataframe}
         print(local_vars)
         exec(code, {}, local_vars)
+        print("Returning")
         return local_vars.pop('response', None) 
 
     except Exception as e:
@@ -211,6 +213,7 @@ def debug_and_regenerate_code(original_code, error_message):
         {"role": "system", "content": "You generated Python code that produced an error. Please debug and regenerate the corrected code. There are a df variable with the dataframe already defined"},
         {"role": "user", "content": f"Original code:\n```python\n{original_code}\n```\nError message: {error_message}\nCorrected code:"}
     ]
+    print(f"Original code:\n```python\n{original_code}\n```\nError message: {error_message}\nCorrected code:")
     if debug:
         st.write(debug_messages)
     corrected_code_response = query_llm(debug_messages)
