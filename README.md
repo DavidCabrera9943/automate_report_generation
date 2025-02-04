@@ -1,7 +1,5 @@
 # Generación Automática de Reportes a partir de Consultas en Lenguaje Natural sobre Bases de Conocimiento.
 
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io/DavidCabrera9943/automate_report_generation)
-
 ## Descripción del Proyecto
 
 Este repositorio contiene el código fuente desarrollado como parte de la tesis de diploma titulada "Generación Automática de Reportes a partir de Consultas en Lenguaje Natural sobre Bases de Conocimiento". El proyecto implementa una aplicación web interactiva, construida con Streamlit, que permite a los usuarios generar reportes automatizados a partir de documentos cargados y consultas en lenguaje natural.
