@@ -106,6 +106,7 @@
 \newcommand{\degree}[1]{\def\@degree{#1}}
 \newcommand{\faculty}[1]{\def\@faculty{#1}}
 \newcommand{\logo}[1]{\def\@logo{#1}}
+\newcommand{\github}[1]{\def\@github{#1}}
 
 \newenvironment{opinion}%
   {\chapter*{Opinión del tutor}}%
@@ -172,7 +173,8 @@
     \vfill
     {\large Trabajo de Diploma \\presentado en opción al título de \\ \@degree} \\
     \vskip 1cm
-    \@date
+    \@date \\
+    {\textbf{\@github}}
   \end{center}
 }
 

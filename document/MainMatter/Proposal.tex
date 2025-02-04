@@ -39,7 +39,11 @@ Segundo, la propuesta desarrolla una estrategia de prompt engineering más sofis
 
 En este capítulo se detalla la implementación de la solución propuesta para la generación automatizada de reportes, describiendo la arquitectura del sistema, los componentes clave y el flujo de trabajo seguido.  Además, se exponen las decisiones de diseño, la selección de herramientas y tecnologías, y se proponen posibles experimentos futuros para evaluar el rendimiento y las capacidades del sistema.
 
-\includegraphics[height=\textheight]{Graphics/graph.png}
+\begin{figure}
+	\centering
+	\includegraphics[height=\textheight]{Graphics/graph.png}
+	\caption{Flujo de trabajo}
+\end{figure}
 
 \subsection{Arquitectura del Sistema y Flujo de Trabajo}
 
@@ -162,7 +166,7 @@ Para cada seccion identificada en el paso anterior, se solicita al LLM que gener
 
 \begin{itemize}
 	\item \textbf{El nombre, la descripcion, y los datos generados en el proceso de creacion del esqueleto del reporte.}
-	\item \textbf{Información relevante sobre el DataFrame(proveniente de ``document\_info``).}
+	\item \textbf{Información relevante sobre el DataFrame:} proveniente de la variable  ``document\_info``.
 	\item \textbf{Instrucciones sobre el formato de respuesta esperado:} Se especifica que el LLM debe responder con código Python encapsulado entre delimitadores.
 \end{itemize}
 Ademas se utiliza una tecnica llamada ``constraint prompting`` en donde se le restringe las capacidades generativas del LLM a seguir una serie de reglas, en este caso se le pide que el codigo python a generar no puede modificar el dataframe original, que los datos relevantes que desee recuperar los debe almacenar en una variable local llamada ``response``, y que no recupere grandes volumenes de datos, solo la informacion relevante que sea capaz de extraer usando codigo python de estos.
@@ -195,18 +199,3 @@ Para la generación de la sección final del reporte, se recurre al LLM, al cual
 
 Una vez obtenida la respuesta del LLM, se procede a analizarla (parsearla) para identificar estos marcadores de gráficos. Posteriormente, estos marcadores son reemplazados programáticamente por las correspondientes gráficas generadas con Altair, permitiendo una integración fluida y dinámica de texto y visualizaciones en la sección del reporte final presentada en Streamlit.
 
-\subsection{Experimentos y Líneas de Investigación}
-
-La implementación descrita sienta las bases para una serie de experimentos y líneas de investigación que podrían explorar y mejorar las capacidades del sistema.  Algunas áreas de interés incluyen:
-
-\begin{itemize}
-	\item \textbf{Evaluación comparativa de modelos LLM:}  Realizar una evaluación sistemática comparando el rendimiento de diferentes modelos LLM disponibles en la API de Groq (y otras plataformas) en la tarea de generación de reportes automatizados.  Métricas a considerar podrían incluir la precisión del código generado,  la relevancia y coherencia de las respuestas,  la velocidad de respuesta,  y la calidad de las visualizaciones.
-	\item \textbf{Optimización de prompts y estrategias de prompt engineering:}  Experimentar con diferentes prompts y técnicas de prompt engineering (e.g., few-shot learning, chain-of-thought prompting, constraint prompting) para mejorar la calidad de las respuestas,  la precisión del código generado y el control sobre el estilo y el tono del reporte.
-	\item \textbf{Desarrollo de mecanismos de validación y corrección de código:}  Implementar mecanismos para validar el código Python generado por el LLM antes de su ejecución,  y para permitir la corrección manual o automática del código en caso de errores.  Esto podría incluir pruebas unitarias generadas por el LLM o la integración de un intérprete de Python en el bucle de retroalimentación.
-	\item \textbf{Expansión de las capacidades de preprocesamiento:}  Ampliar el rango de tareas de preprocesamiento que el sistema puede realizar automáticamente,  incluyendo tareas más complejas como la imputación de valores faltantes,  la normalización de datos,  la detección de outliers,  y la ingeniería de características.
-	\item \textbf{Mejora de la generación de visualizaciones:}  Desarrollar un sistema más inteligente y flexible para la generación de visualizaciones,  que seleccione automáticamente el tipo de gráfico adecuado,  permita la personalización por parte del usuario,  y genere tablas formateadas cuando sea apropiado.  Integrar el LLM para que sugiera visualizaciones relevantes y genere descripciones textuales de las mismas.
-	\item \textbf{Soporte para bases de datos y fuentes de datos externas:}  Extender el sistema para que pueda interactuar directamente con bases de datos y otras fuentes de datos externas,  en lugar de limitarse a documentos cargados por el usuario.  Esto requeriría la implementación de mecanismos para la conexión a bases de datos,  la generación de consultas SQL u otros lenguajes de consulta,  y la integración de los resultados en el flujo de trabajo de generación de reportes.
-	\item \textbf{Evaluación con usuarios reales y estudios de caso:}  Realizar estudios de caso y evaluaciones con usuarios reales para medir la usabilidad,  utilidad y efectividad del sistema en escenarios prácticos.  Recopilar feedback de los usuarios para identificar áreas de mejora y refinar el diseño del sistema.
-\end{itemize}
-
-Estas líneas de investigación representan direcciones prometedoras para avanzar en el desarrollo de sistemas de generación automatizada de reportes más potentes,  flexibles y adaptables a las necesidades de los usuarios.

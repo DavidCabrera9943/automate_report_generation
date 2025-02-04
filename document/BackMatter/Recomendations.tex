@@ -1,3 +1,17 @@
 \begin{recomendations}
-    Recomendaciones
+    A partir de las conclusiones de esta tesis, se proponen las siguientes recomendaciones para futuras investigaciones y desarrollos:
+    
+    Se recomienda realizar una evaluación sistemática y comparativa de diversos modelos LLM, tanto open-source como propietarios, en la tarea específica de generación de reportes. Esta evaluación debería considerar métricas cuantitativas (precisión, coherencia, completitud) y cualitativas (utilidad, claridad, relevancia). Asi como la posibilidad de utilizar fine-tunning para tener un modelo mas robusto en la generacion de reportes.
+    
+    Una posible mejora que se plantea en casi todos los programas que  utilizan skeleton-of-thougt como estructura principal es la de paralelizacion, es decir, ir generando cada seccion en un hilo o proceso de trabajo distinto lo que permitiria reducir el tiempo de generacion de los reportes. En este trabajo no se abarco esa posibilidad debido a las limitaciones de la API.
+    
+    Es fundamental continuar investigando y desarrollando técnicas de prompt engineering más avanzadas y sofisticadas. Se sugiere explorar estrategias como el aprendizaje few-shot más elaborado y el chain-of-thought prompting para razonamiento más complejo.
+
+    Un paso evolutivo importante sería extender el sistema para que pueda interactuar directamente con bases de datos relacionales, NoSQL, APIs y otras fuentes de datos externas. Esto requeriría desarrollar mecanismos para la conexión segura a estas fuentes, la generación de consultas en diferentes lenguajes (SQL, GraphQL, etc.) y la integración fluida de los resultados en el proceso de generación de reportes.
+    
+    Se recomienda realizar estudios de caso en dominios específicos (finanzas, medicina, ingeniería, etc.) para evaluar la efectividad del sistema en escenarios prácticos y relevantes. Es crucial llevar a cabo evaluaciones con usuarios reales (analistas de datos, profesionales de negocios, etc.) para medir la usabilidad, utilidad y el impacto del sistema en entornos de trabajo reales. Recopilar feedback de los usuarios sería esencial para identificar áreas de mejora y refinar el diseño del sistema para satisfacer las necesidades reales.
+    
+    Dado el potencial de los LLMs para generar contenido sesgado o incorrecto, se recomienda investigar activamente estrategias para mitigar estos problemas en el contexto de la generación de reportes. Esto podría incluir técnicas de fact-checking automatizado, el uso de bases de conocimiento verificadas, y el desarrollo de prompts que fomenten la objetividad y la precisión.
+    
+    Implementar estas recomendaciones permitiría avanzar significativamente en el desarrollo de sistemas de generación automatizada de reportes más potentes, confiables y adaptados a las necesidades de diversos usuarios y dominios.
 \end{recomendations}

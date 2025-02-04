@@ -1,43 +1,43 @@
 \chapter{Validación de la Implementación y Experimentos}\label{chapter:implementation}
 
-En este capítulo se detalla la implementación de la solución analizando un caso de prueba paso a paso, describiendo en cada uno de estos el proceso seguido al detalle. Para este caso de prueba estaremos usando el modelo Llama3.3-70b debido a que la experiencia en pruebas previas ha mostrado que este modelo es el que mejor tiempo de respuesta tiene.
+En este capítulo, se detalla la implementación de la solución propuesta, analizando un caso de prueba detalladamente paso a paso.  En cada etapa de este caso de prueba, se describe el proceso seguido al detalle. Para este caso de prueba estaremos usando el modelo Llama3.3-70b, la elección del modelo Llama3.3-70b se justifica por su rendimiento superior en cuanto a tiempo de respuesta, según lo evidenciado en pruebas preliminares.
 
-Para este caso estaremos utilizando un dataset llamado \href{https://huggingface.co/datasets/sayanroy058/Business-Sales/viewer}{\textbf{Business-Sales}}, el cual representa datos de transacciones de ventas de automóviles. Este dataset resulta ideal para evaluar la capacidad del modelo Llama3.3-70b, tanto en la generación de informes automáticos como en la resolución de consultas en lenguaje natural.
+En este caso de prueba, estaremos utilizando el dataset \href{https://huggingface.co/datasets/sayanroy058/Business-Sales/viewer}{\textbf{Business-Sales}}, que comprende datos de transacciones de ventas de automóviles. Este dataset resulta ideal para evaluar la capacidad del modelo Llama3.3-70b, tanto en la generación de informes automáticos como en la resolución de consultas en lenguaje natural debido a las siguientes consideraciones.
 
-\subsubsection{Consideraciones Iniciales sobre el Dataset}
-Antes de describir las características principales del dataset, es fundamental destacar algunos aspectos críticos que afectan su procesamiento y análisis:
+\subsubsection{Consideraciones sobre el Dataset}
+Antes de describir las características principales del dataset, es fundamental destacar algunos aspectos críticos que influyen en su procesamiento y análisis.
 \begin{itemize}
 	\item{Datos Faltantes:}
-	Existen valores faltantes en algunas columnas, lo que requiere que el LLM analice e implemente alguna tecnica de imputacion para completar los valores faltantes.
+	Existen valores faltantes en algunas columnas, lo que requiere que el LLM analice e implemente alguna técnica de imputación para completar estos valores.
 	
 	\item{Columnas Irrelevantes:}
-	Algunas columnas, como VIN, contienen información única para cada vehículo y no aportan valor para los análisis o reportes generales. Por lo tanto, el modelo deberia darse cuenta de esto y ya sea desecharla en el preprocesamiento o por lo menos no utilizarla a la hora de recibir informacion.
+	Algunas columnas, como VIN (Número de Indentificación del Vehículo), contienen información única para cada vehículo y no aportan valor para los análisis o reportes generales. Por lo tanto, el modelo debería identificar esta irrelevancia y, ya sea desecharla en el preprocesamiento o, al menos, no utilizarla al generar información.
 	
 	\item{Columnas con Abreviaturas:}
 	Existen columnas como MMR (Manheim Market Report) cuyo significado no es explícito. El modelo deberá razonar en contexto para comprender su relevancia y cómo utilizarla en el análisis.
 	
 	\item{Interpretación de Rangos:}
-	Algunas columnas, como condition, presentan valores numéricos cuya interpretación no es inmediata, ell modelo debera inferir sobre el rango y significado de estos valores para obtener resultados adecuados.
+	Algunas columnas, como \textit{condition}, presentan valores numéricos cuya interpretación no es inmediata. El modelo deberá inferir el rango y significado de estos valores para obtener resultados adecuados.
 	
 	\item{Razonamiento sobre Datos Heterogéneos:}
 	Las columnas combinan datos categóricos, numéricos y textuales, lo que pone a prueba la capacidad del modelo para generalizar y extraer patrones útiles.
 	
 	\item{Gran cantidad de datos:}
-	El dataset cuenta con cerca de 600 mil entradas lo cual hace que rea imposible pasarse completamente como contexto de niguno de los modelos de lenguajes en la actualidad.
+	El dataset cuenta con cerca de 600 mil entradas, lo cual hace que sea imposible pasarlo completamente como contexto a ninguno de los modelos de lenguaje actuales.
 \end{itemize}
 
 \section{Interfaz}
-Cuando accedemos al sitio web que nos proporciona streamlit cuando ejecutamos el programa nos encontramos con Nos encontramos con una pagina web que consta de dos columnas principales, una columna central mas espaciosa que seria el contenido principal de lapagina y una columna lateral a la izquierda que seria la columna de configuracion.
+Al acceder al sitio web proporcionado por Streamlit al ejecutar el programa, se presenta una página web que consta de dos columnas principales: una columna central más espaciosa, que constituye el contenido principal de la página, y una columna lateral a la izquierda, destinada a la configuración.
 
 \subsection{Columna de configuracion}
-La columna de configuracion es una pequeña columna lateral que nos permite cofugurar que modelo de los que nos provee la API de Groq vamos a estar utilizando ademas de un slider que nos permite seleccionar la cantidad de tokens maximos a generar por el model. Esto nos permite un mayor control sobre los llamados de la API y poder mantenernos dentro de los limites que nos impone el sitio web.
+La columna de configuración es una columna lateral estrecha que permite configurar el modelo de lenguaje a utilizar de entre los disponibles en la API de Groq.  Adicionalmente, incluye un control deslizante (slider) para seleccionar la cantidad máxima de tokens a generar por el modelo. Esto proporciona un mayor control sobre las invocaciones a la API y ayuda a mantenerse dentro de los límites establecidos por el sitio web.
 
-Esta columna ademas cuenta con un checkbox que por defecto se encuentra desabilitado llamado Debug, el cual si lo activamos nos abre una nueva columna a la derecha de la collumna principal con el contenido paso a paso de todo lo que se va realizando. En esta columna se muestran las llamadas y las respuestas del LLM, los resultado de las ejecuciones de los codigos generados, el proceso de preprocesado detallando cada una de las tareas que se identificaron y practicamente todo lo que va ocurriendo mientras se va generando el reporte.
+Esta columna también incluye una casilla de verificación (checkbox) deshabilitada por defecto, denominada "Debug". Al activarla, se habilita una nueva columna a la derecha de la columna principal que muestra el contenido detallado de cada paso del proceso. En esta columna se visualizan las llamadas y respuestas del LLM, los resultados de la ejecución del código generado, el proceso de preprocesamiento con el detalle de cada tarea identificada, y prácticamente todo lo que ocurre durante la generación del reporte.
 
 \subsection{Culumna Principal}
-La culumna principan cuenta con un encabezado con el nombre \textbf{Generador de Reportes Automatizados con LLM} y bajo este un componente de carga de archivo, que permite tanto la carga mediante la interfaz de carga de archivo propia de cada sistema operativo como la facilidad de simplementa arrastrar y soltar un archivo para su carga. Una vez que se carga el archivo comienza el proceso de extraer los datos relevantes del mismo.
+La columna principal presenta un encabezado con el título \textbf{Generador de Reportes Automatizados con LLM} y, debajo, un componente para la carga de archivos.  Este componente permite la carga de archivos tanto mediante la interfaz de carga de archivos propia del sistema operativo, como mediante la funcionalidad de arrastrar y soltar. Una vez que se carga el archivo comienza el proceso de extraer los datos relevantes del mismo.
 
-A partir de los datos de informacion obtenidos anteriormente se le pide al LLM que cree una lista de tareas de preprocesado, dichas tareas pueden ir desde tareas predefinidas como marcar una columna como categorica o convertir una columna con fechas a objetos de fecha de python, a tareas mas complejas para las cuales se le pide que proporcione el codigo pandas correspondiente. En el caso que estamos analizando la lista de tareas que el modelo ejecuto fueron las siguientes:
+A partir de los datos extraídos, se solicita al LLM que genere una lista de tareas de preprocesamiento.  Estas tareas pueden variar desde operaciones predefinidas, como marcar una columna como categórica o convertir una columna de fechas a objetos de fecha de Python, hasta tareas más complejas para las cuales se le solicita que proporcione el código Pandas correspondiente. En el caso que se analiza, la lista de tareas generada por el modelo fue la siguiente:
 
 
 \definecolor{jsoncolor}{rgb}{0.12,0.55,0.82}
@@ -65,18 +65,18 @@ A partir de los datos de informacion obtenidos anteriormente se le pide al LLM q
 		{"tarea": "pandas", "codigo": "df = df[df.sellingprice > 0] # Filtrar valores negativos de precio de venta"} ]
 \end{lstlisting}
 
-Como podemos ver el modelo genero un json con un arreglo de tareas de preprocesado a realizar, destacando entre estas eliminar la columna vin, valores de precion de venta negaticvos y valores de condicion extrema. Esto nos permite ver que el proceso de extraccion de informacion que realizamos anteriormente dio buenos resultados ya que el modelo ha podido inferir las columnas relevantes, el rango en que estas se comportan y que valores pudieran ser 'ruido' en el dataset.
+Como se puede observar, el modelo generó un JSON con un arreglo de tareas de preprocesamiento a realizar.  Entre estas tareas, se destaca la eliminación de la columna \textit{vin}, la eliminación de valores negativos en la columna \textit{sellingprice}, y la eliminación de valores extremos en la columna \textit{condition}.  Esto demuestra que el proceso de extracción de información previo fue exitoso, ya que el modelo logró inferir las columnas relevantes, el rango de valores esperado en cada una, y los posibles valores atípicos o ``ruido`` en el dataset.
 
-Una vez que se realize el preprocesamiento se le notificara al usuario el resultado del mismo si fue satisfactori o ocurrio algun error, en cualquier caso aparecera bajo estas notificaciones un cuadro de texto donde se le pide que inserte una consulta. La consulta debe ser en lenguaje natural y relacionada con el documento que se acaba de subir. Ademas se le sugiere al usuario 3 posibles consultas a realizar teniendo en cuenta el documento subido.
+Una vez finalizado el preprocesamiento, se notifica al usuario el resultado, indicando si fue satisfactorio o si ocurrió algún error. En cualquier caso, debajo de estas notificaciones aparece un cuadro de texto donde se solicita al usuario que introduzca una consulta. La consulta debe ser en lenguaje natural y relacionada con el documento cargado. Adicionalmente, se sugieren al usuario tres posibles consultas relevantes al documento subido.
 
-Para probar las capacidades del LLM le pediremos que haga un reporte de ventas de la marca Kia en el 2014. Esta consulta nos permitira ver si el modelo es capza de filtrar los datos que necesita para elaborar la respuesta, asi como si puede generar graficos relevantes que acompañen la informacion antes recibida.
+Para evaluar las capacidades del LLM, se le solicita generar un reporte de ventas de la marca Kia en el año 2014. Esta consulta permitirá verificar si el modelo es capaz de filtrar los datos necesarios para elaborar la respuesta, así como su habilidad para generar gráficos relevantes que complementen la información. 
 
 \section{Generando el reporte}
-Cuando cargamos el documento y este termina de ser preprocesado le hacemos la siguiente consulta:
+Tras cargar el documento y completar el preprocesamiento, se introduce la siguiente consulta:
 
-\textit{Como se comportaron las ventas de kia en 2014 en relacion a las del año anterior}
+\textit{¿Cómo se comportaron las ventas de Kia en 2014 en relación con las del año anterior?}
 
-A lo cual el primer paso que da el modelo es generar el \textbf{esqueleto del reporte}, donde para cada sección debe ademas del nombre de la sección proporcionar una descripción y alguna información de la como estructurar los gráficos o alguna sugerencia de como deberían ser o que datos debe mostrar.
+Como primer paso, el modelo genera el \textbf{esqueleto del reporte}. Para cada sección del esqueleto, el modelo proporciona el nombre de la sección, una descripción, y sugerencias sobre cómo estructurar los gráficos o qué datos deben mostrar.
 
 En este caso el modelo nos proporcionó el siguiente esqueleto:
 
@@ -87,38 +87,32 @@ En este caso el modelo nos proporcionó el siguiente esqueleto:
 				\item[\textbf{Sección Introducción}]
 				\begin{itemize}
 					\item \textbf{Descripción:} Breve contexto del análisis de las ventas de Kia en 2014 y comparación con 2013
-					\item \textbf{Información:} Contexto general del análisis de ventas
 				\end{itemize}
 				\item[\textbf{Sección Ventas de Kia en 2014}]
 				\begin{itemize}
 					\item \textbf{Descripción:} Presentación detallada de las ventas de Kia en 2014
-					\item \textbf{Información:} Datos numéricos de ventas en 2014. Sugerencia: Tabla detallada
 				\end{itemize}
 				\item[\textbf{Sección Ventas de Kia en 2013}]
 				\begin{itemize}
 					\item \textbf{Descripción:} Presentación detallada de las ventas de Kia en 2013
-					\item \textbf{Información:} Datos numéricos de ventas en 2013. Sugerencia: Tabla detallada
 				\end{itemize}
 				\item[\textbf{Sección Comparación de Ventas entre 2013 y 2014}]
 				\begin{itemize}
 					\item \textbf{Descripción:} Comparación de las ventas de Kia en 2013 y 2014
-					\item \textbf{Información:} Gráfico de barras para comparar las ventas en 2013 y 2014. Sugerencia: Gráfico de barras
 				\end{itemize}
 				\item[\textbf{Sección Análisis de la Tendencia de las Ventas}]
 				\begin{itemize}
 					\item \textbf{Descripción:} Análisis de la tendencia de las ventas de Kia en 2014 en comparación con 2013
-					\item \textbf{Información:} Análisis de la tendencia de las ventas (aumento, disminución o estabilidad)
 				\end{itemize}
 				\item[\textbf{Sección Conclusiones y Recomendaciones}]
 				\begin{itemize}
 					\item \textbf{Descripción:} Resumen de los hallazgos y conclusiones del análisis de las ventas de Kia en 2014
-					\item \textbf{Información:} Resumen de los hallazgos y conclusiones
 				\end{itemize}
 			\end{description}
 		\end{minipage}
 }}
 
-A partir de este esqueleto, se empiezan a generar el reporte seccion por seccion. El primer paso para crear la seccion como habiamos planteado en el capitulo anterior es obtener datos del dataframe mediante un codigo python generado por el LLM. En esta ocasion el modelo genero el siguiente codigo.
+A partir de este esqueleto, se inicia la generación del reporte sección por sección. El primer paso para crear cada sección, como se planteó en el capítulo anterior, es obtener datos del dataframe mediante código Python generado por el LLM. En esta ocasión, el modelo generó el siguiente código: 
 
 
 \begin{lstlisting}
@@ -147,9 +141,9 @@ A partir de este esqueleto, se empiezan a generar el reporte seccion por seccion
 	print(response)
 \end{lstlisting}
 
-Notese que el modelo esta identificando correctamente que es lo que queremos y que datos necesitamos para esta introduccion, en este caso decidio obtener el numero total de ventas de ambos años y el porcentaje de cambio de un año al otro. El modelo ademas tuvo una ligera impresicion en este codigo ya que returna tambien un string de relevancia, el  cual parece ser una anotacion para generar el reporte donde destaca que el analisis de venta de estos anos es relevante para obtener el comportamiento del mercado.
+Nótese que el modelo identifica correctamente el objetivo y los datos necesarios para la introducción.  En este caso, decide obtener el número total de ventas de ambos años y el porcentaje de cambio interanual. El modelo también incluye, aunque con una ligera imprecisión, una cadena de texto de "relevancia".Esta cadena parece ser una anotación para la generación del reporte, donde se subraya la relevancia del análisis de ventas de estos años para comprender el comportamiento del mercado.
 
-El segundo paso para la generacion de una seccion era identificar y generar graficos que pudieran servir para un mejor anlisis por parte del usuario para los datos antes recogido. En esta ocasion el modelo luego de generar un codigo erroneo en primera instancia, fue capaz de generar los siguientes graficos.
+El segundo paso para la generación de cada sección era identificar y generar gráficos que pudieran facilitar el análisis de los datos recopilados por parte del usuario. En esta ocasión, tras generar inicialmente un código erróneo, el modelo logró producir los siguientes gráficos.
 
 \begin{figure}[H] % Usamos h! para forzar la posición aquí si es necesario, pero considera htbp para más flexibilidad
 	\centering % Centrar todo el conjunto de figuras horizontalmente
@@ -167,10 +161,36 @@ El segundo paso para la generacion de una seccion era identificar y generar graf
 	\end{minipage}
 \end{figure}
 
-Error detectado en la primera ejecucion del codigo generado
+Error detectado en la primera ejecución del código generado:
 \textbf{\textit{Error message: Tz-aware datetime.datetime cannot be converted to datetime64 unless utc=True, at position 127}}
 
-Luego cuando se le pide al modelo que utilizando los datos obtenidos y estos graficos genere la seccion del reporte, nos muestra ahora si en la columna principal la primera seccion del reporte.
-//IMAGEN DE LA SECCION
+Posteriormente, al solicitar al modelo que genere la sección del reporte utilizando los datos obtenidos y estos gráficos, se muestra la primera sección del reporte en la columna principal. A partir de aquí, el resto de las secciones se generan de forma similar.
 
-A partir de aqui se generan el resto de secciones de la misma forma.
+\begin{figure}[H] % Usamos h! para forzar la posición aquí si es necesario, pero considera htbp para más flexibilidad
+	\centering % Centrar todo el conjunto de figuras horizontalmente
+	\begin{minipage}{0.48\textwidth} % Ajusta el ancho según necesites (ej. 0.48 para dejar espacio entre figuras)
+		\centering
+		\includegraphics[height=\textheight]{intro.png} % Reemplaza con tu archivo real
+		\caption{Sección Introducción}
+		\label{fig:ejemplo_introduccion}
+	\end{minipage}
+\end{figure}
+
+
+
+
+\subsection{Experimentos y Líneas de Investigación}
+
+La implementación descrita sienta las bases para una serie de experimentos y líneas de investigación que podrían explorar y mejorar las capacidades del sistema.  Algunas áreas de interés incluyen:
+
+\begin{itemize}
+	\item \textbf{Evaluación comparativa de modelos LLM:}  Realizar una evaluación sistemática comparando el rendimiento de diferentes modelos LLM disponibles en la API de Groq (y otras plataformas) en la tarea de generación de reportes automatizados.  Métricas a considerar podrían incluir la precisión del código generado,  la relevancia y coherencia de las respuestas,  la velocidad de respuesta,  y la calidad de las visualizaciones.
+	\item \textbf{Optimización de prompts y estrategias de prompt engineering:}  Experimentar con diferentes prompts y técnicas de prompt engineering (e.g., few-shot learning, chain-of-thought prompting, constraint prompting) para mejorar la calidad de las respuestas,  la precisión del código generado y el control sobre el estilo y el tono del reporte.
+	\item \textbf{Desarrollo de mecanismos de validación y corrección de código:}  Implementar mecanismos para validar el código Python generado por el LLM antes de su ejecución,  y para permitir la corrección manual o automática del código en caso de errores.  Esto podría incluir pruebas unitarias generadas por el LLM o la integración de un intérprete de Python en el bucle de retroalimentación.
+	\item \textbf{Expansión de las capacidades de preprocesamiento:}  Ampliar el rango de tareas de preprocesamiento que el sistema puede realizar automáticamente,  incluyendo tareas más complejas como la imputación de valores faltantes,  la normalización de datos,  la detección de outliers,  y la ingeniería de características.
+	\item \textbf{Mejora de la generación de visualizaciones:}  Desarrollar un sistema más inteligente y flexible para la generación de visualizaciones,  que seleccione automáticamente el tipo de gráfico adecuado,  permita la personalización por parte del usuario,  y genere tablas formateadas cuando sea apropiado.  Integrar el LLM para que sugiera visualizaciones relevantes y genere descripciones textuales de las mismas.
+	\item \textbf{Soporte para bases de datos y fuentes de datos externas:}  Extender el sistema para que pueda interactuar directamente con bases de datos y otras fuentes de datos externas,  en lugar de limitarse a documentos cargados por el usuario.  Esto requeriría la implementación de mecanismos para la conexión a bases de datos,  la generación de consultas SQL u otros lenguajes de consulta,  y la integración de los resultados en el flujo de trabajo de generación de reportes.
+	\item \textbf{Evaluación con usuarios reales y estudios de caso:}  Realizar estudios de caso y evaluaciones con usuarios reales para medir la usabilidad,  utilidad y efectividad del sistema en escenarios prácticos.  Recopilar feedback de los usuarios para identificar áreas de mejora y refinar el diseño del sistema.
+\end{itemize}
+
+Estas líneas de investigación representan direcciones prometedoras para avanzar en el desarrollo de sistemas de generación automatizada de reportes más potentes,  flexibles y adaptables a las necesidades de los usuarios.

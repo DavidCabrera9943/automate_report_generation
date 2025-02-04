@@ -1,3 +1,14 @@
 \begin{conclusions}
-    Conclusiones
+    La presente tesis ha demostrado la viabilidad y el potencial de la automatización de la generación de reportes mediante la integración de LLMs y bases de conocimiento estructuradas. A través del desarrollo e implementación de un sistema funcional, se han alcanzado las siguientes conclusiones principales:
+    \begin{itemize}
+    \item{Efectividad del Enfoque Skeleton-of-Thought:} La estrategia de decodificación Skeleton-of-Thought ha demostrado ser efectiva para guiar a los LLMs en la generación de reportes estructurados y coherentes. La descomposición del proceso en la creación de un esqueleto y la posterior expansión detallada ha mejorado la organización y la calidad del contenido generado. Este enfoque permite además generar reportes más largos y detallados que los que pudieran ser generados solamente por una consulta a un LLM.
+    
+    \item{Potencial del Prompt Engineering:} Las técnicas de prompt engineering han sido cruciales para dirigir el comportamiento del LLM, controlando el estilo, el tono y la precisión de la información en los reportes generados. La experimentación con diferentes tipos de prompts ha revelado la importancia de un diseño cuidadoso para obtener resultados óptimos. La técnica de ``constrain prompting`` ha facilitado que incluso modelos pequeños sigan correctamente la estructura de respuestas propuestas en el prompt
+    
+	\item{Generación de Código y Gráficos Automatizada:}  El sistema destaca por su capacidad de generar automáticamente código Python para la extracción y el preprocesamiento de datos, así como para la creación de visualizaciones gráficas relevantes. Esta automatización es crucial para la eficiencia y escalabilidad del sistema. Aunque inicialmente se observaron errores en el código generado, la implementación de un mecanismo de retroalimentación permitió que el modelo, tras recibir la notificación del error específico, pudiera corregirlo en la mayoría de los casos, requiriendo generalmente solo un intento para lograr una ejecución exitosa.
+    
+    \item{Limitaciones y Desafíos:} A pesar de los avances, se reconocen limitaciones inherentes a los LLMs, como la posible generación de información incorrecta o alucinaciones, aun cuando le damos los datos correctos recibidos mediante codigo python.
+\end{itemize}
+    En resumen, esta tesis ha proporcionado una base sólida para la automatización de la generación de reportes, demostrando que la combinación de LLMs, bases de conocimiento y técnicas de prompt engineering ofrece una vía prometedora para mejorar la eficiencia y la accesibilidad en el manejo de información.
+    
 \end{conclusions}
