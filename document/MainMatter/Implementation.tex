@@ -11,7 +11,7 @@ Antes de describir las características principales del dataset, es fundamental 
 	Existen valores faltantes en algunas columnas, lo que requiere que el LLM analice e implemente alguna técnica de imputación para completar estos valores.
 	
 	\item{Columnas Irrelevantes:}
-	Algunas columnas, como VIN (Número de Indentificación del Vehículo), contienen información única para cada vehículo y no aportan valor para los análisis o reportes generales. Por lo tanto, el modelo debería identificar esta irrelevancia y, ya sea desecharla en el preprocesamiento o, al menos, no utilizarla al generar información.
+	Algunas columnas, como VIN (Número de Identificación del Vehículo), contienen información única para cada vehículo y no aportan valor para los análisis o reportes generales. Por lo tanto, el modelo debería identificar esta irrelevancia y, ya sea desecharla en el preprocesamiento o, al menos, no utilizarla al generar información.
 	
 	\item{Columnas con Abreviaturas:}
 	Existen columnas como MMR (Manheim Market Report) cuyo significado no es explícito. El modelo deberá razonar en contexto para comprender su relevancia y cómo utilizarla en el análisis.
@@ -29,12 +29,12 @@ Antes de describir las características principales del dataset, es fundamental 
 \section{Interfaz}
 Al acceder al sitio web proporcionado por Streamlit al ejecutar el programa, se presenta una página web que consta de dos columnas principales: una columna central más espaciosa, que constituye el contenido principal de la página, y una columna lateral a la izquierda, destinada a la configuración.
 
-\subsection{Columna de configuracion}
+\subsection{Columna de configuración}
 La columna de configuración es una columna lateral estrecha que permite configurar el modelo de lenguaje a utilizar de entre los disponibles en la API de Groq.  Adicionalmente, incluye un control deslizante (slider) para seleccionar la cantidad máxima de tokens a generar por el modelo. Esto proporciona un mayor control sobre las invocaciones a la API y ayuda a mantenerse dentro de los límites establecidos por el sitio web.
 
 Esta columna también incluye una casilla de verificación (checkbox) deshabilitada por defecto, denominada "Debug". Al activarla, se habilita una nueva columna a la derecha de la columna principal que muestra el contenido detallado de cada paso del proceso. En esta columna se visualizan las llamadas y respuestas del LLM, los resultados de la ejecución del código generado, el proceso de preprocesamiento con el detalle de cada tarea identificada, y prácticamente todo lo que ocurre durante la generación del reporte.
 
-\subsection{Culumna Principal}
+\subsection{Columna Principal}
 La columna principal presenta un encabezado con el título \textbf{Generador de Reportes Automatizados con LLM} y, debajo, un componente para la carga de archivos.  Este componente permite la carga de archivos tanto mediante la interfaz de carga de archivos propia del sistema operativo, como mediante la funcionalidad de arrastrar y soltar. Una vez que se carga el archivo comienza el proceso de extraer los datos relevantes del mismo.
 
 A partir de los datos extraídos, se solicita al LLM que genere una lista de tareas de preprocesamiento.  Estas tareas pueden variar desde operaciones predefinidas, como marcar una columna como categórica o convertir una columna de fechas a objetos de fecha de Python, hasta tareas más complejas para las cuales se le solicita que proporcione el código Pandas correspondiente. En el caso que se analiza, la lista de tareas generada por el modelo fue la siguiente:
@@ -54,7 +54,7 @@ A partir de los datos extraídos, se solicita al LLM que genere una lista de tar
 		{"tarea": "identificar_categorica", "columna": "color"}, 
 		{"tarea": "identificar_categorica", "columna": "interior"}, 
 		{"tarea": "identificar_categorica", "columna": "seller"}, 
-		{"tarea": "filtrar", "columna": "vin", "sugerencia": "Eliminar columna, no se utiliza para el analisis"}, 
+		{"tarea": "filtrar", "columna": "vin", "sugerencia": "Eliminar columna, no se utiliza para el análisis"}, 
 		{"tarea": "filtrar", "columna": "odometer", "sugerencia": "Filtrar valores outliers"}, 
 		{"tarea": "filtrar", "columna": "condition", "sugerencia": "Filtrar valores outliers"}, 
 		{"tarea": "filtrar", "columna": "mmr", "sugerencia": "Eliminar filas con datos faltantes"}, 
@@ -120,28 +120,28 @@ A partir de este esqueleto, se inicia la generación del reporte sección por se
 	
 	# Suponemos que el dataframe 'df' ya esta cargado
 	
-	# Calculamos el numero de ventas de Kia en 2014 y 2013
+	# Calculamos el número de ventas de Kia en 2014 y 2013
 	ventas_2014 = len(df[(df['year'] == 2014) & (df['make'] == 'Kia')])
 	ventas_2013 = len(df[(df['year'] == 2013) & (df['make'] == 'Kia')])
 	
-	# Calculamos el porcentaje de aumento o disminucion de ventas
+	# Calculamos el porcentaje de aumento o disminución de ventas
 	if ventas_2013 != 0:
 	porcentaje_cambio = ((ventas_2014 - ventas_2013) / ventas_2013) * 100
 	else:
 	porcentaje_cambio = 0
 	
-	# Creamos un diccionario con la informacion necesaria para la seccion de introduccion
+	# Creamos un diccionario con la información necesaria para la sección de introducción
 	response = {
 		'ventas_2014': ventas_2014,
 		'ventas_2013': ventas_2013,
 		'porcentaje_cambio': porcentaje_cambio,
-		'relevancia': 'El analisis de las ventas de Kia en 2014 y 2013 es relevante para entender el comportamiento del mercado y la estrategia de la empresa en ese periodo.'
+		'relevancia': 'El análisis de las ventas de Kia en 2014 y 2013 es relevante para entender el comportamiento del mercado y la estrategia de la empresa en ese periodo.'
 	}
 	
 	print(response)
 \end{lstlisting}
 
-Nótese que el modelo identifica correctamente el objetivo y los datos necesarios para la introducción.  En este caso, decide obtener el número total de ventas de ambos años y el porcentaje de cambio interanual. El modelo también incluye, aunque con una ligera imprecisión, una cadena de texto de "relevancia".Esta cadena parece ser una anotación para la generación del reporte, donde se subraya la relevancia del análisis de ventas de estos años para comprender el comportamiento del mercado.
+Nótese que el modelo identifica correctamente el objetivo y los datos necesarios para la introducción.  En este caso, decide obtener el número total de ventas de ambos años y el porcentaje de cambio entre estos. El modelo también incluye, aunque con una ligera imprecisión, una cadena de texto de "relevancia".Esta cadena parece ser una anotación para la generación del reporte, donde se subraya la relevancia del análisis de ventas de estos años para comprender el comportamiento del mercado.
 
 El segundo paso para la generación de cada sección era identificar y generar gráficos que pudieran facilitar el análisis de los datos recopilados por parte del usuario. En esta ocasión, tras generar inicialmente un código erróneo, el modelo logró producir los siguientes gráficos.
 
@@ -177,20 +177,59 @@ Posteriormente, al solicitar al modelo que genere la sección del reporte utiliz
 \end{figure}
 
 
+\section{Comparación de distintos modelos}
 
-
-\subsection{Experimentos y Líneas de Investigación}
-
-La implementación descrita sienta las bases para una serie de experimentos y líneas de investigación que podrían explorar y mejorar las capacidades del sistema.  Algunas áreas de interés incluyen:
+Para realizar una comparación de los distintos modelos disponibles, se generó un reporte para cada uno de ellos utilizando la misma consulta previamente analizada. A partir de estos reportes, se realizó una revisión para determinar su calidad. Para ello, se establecieron los siguientes criterios de comparación:
 
 \begin{itemize}
-	\item \textbf{Evaluación comparativa de modelos LLM:}  Realizar una evaluación sistemática comparando el rendimiento de diferentes modelos LLM disponibles en la API de Groq (y otras plataformas) en la tarea de generación de reportes automatizados.  Métricas a considerar podrían incluir la precisión del código generado,  la relevancia y coherencia de las respuestas,  la velocidad de respuesta,  y la calidad de las visualizaciones.
-	\item \textbf{Optimización de prompts y estrategias de prompt engineering:}  Experimentar con diferentes prompts y técnicas de prompt engineering (e.g., few-shot learning, chain-of-thought prompting, constraint prompting) para mejorar la calidad de las respuestas,  la precisión del código generado y el control sobre el estilo y el tono del reporte.
-	\item \textbf{Desarrollo de mecanismos de validación y corrección de código:}  Implementar mecanismos para validar el código Python generado por el LLM antes de su ejecución,  y para permitir la corrección manual o automática del código en caso de errores.  Esto podría incluir pruebas unitarias generadas por el LLM o la integración de un intérprete de Python en el bucle de retroalimentación.
-	\item \textbf{Expansión de las capacidades de preprocesamiento:}  Ampliar el rango de tareas de preprocesamiento que el sistema puede realizar automáticamente,  incluyendo tareas más complejas como la imputación de valores faltantes,  la normalización de datos,  la detección de outliers,  y la ingeniería de características.
-	\item \textbf{Mejora de la generación de visualizaciones:}  Desarrollar un sistema más inteligente y flexible para la generación de visualizaciones,  que seleccione automáticamente el tipo de gráfico adecuado,  permita la personalización por parte del usuario,  y genere tablas formateadas cuando sea apropiado.  Integrar el LLM para que sugiera visualizaciones relevantes y genere descripciones textuales de las mismas.
-	\item \textbf{Soporte para bases de datos y fuentes de datos externas:}  Extender el sistema para que pueda interactuar directamente con bases de datos y otras fuentes de datos externas,  en lugar de limitarse a documentos cargados por el usuario.  Esto requeriría la implementación de mecanismos para la conexión a bases de datos,  la generación de consultas SQL u otros lenguajes de consulta,  y la integración de los resultados en el flujo de trabajo de generación de reportes.
-	\item \textbf{Evaluación con usuarios reales y estudios de caso:}  Realizar estudios de caso y evaluaciones con usuarios reales para medir la usabilidad,  utilidad y efectividad del sistema en escenarios prácticos.  Recopilar feedback de los usuarios para identificar áreas de mejora y refinar el diseño del sistema.
+	\item{Profundidad del Análisis:} Se analiza si el reporte va más allá de la simple presentación de datos, ofreciendo análisis e interpretaciones significativas.
+	\item{Coherencia y Estructura:} El reporte está bien organizado y estructurado en secciones lógicas (Introducción, Datos 2013, Datos 2014, Comparación, Conclusiones).
+	\item{Utilidad de las Visualizaciones:} ¿Son los gráficos y tablas relevantes y útiles para comprender los datos?
+	\item{Precisión y Calidad General:} La información presentada en el reporte es precisa y se basa en los datos proporcionados. Demuestra una comprensión adecuada de la solicitud y los datos.
 \end{itemize}
 
-Estas líneas de investigación representan direcciones prometedoras para avanzar en el desarrollo de sistemas de generación automatizada de reportes más potentes,  flexibles y adaptables a las necesidades de los usuarios.
+Para cada uno de estos criterios, se establecieron las siguientes clasificaciones:
+
+\begin{itemize}
+	\item{Alta:} En este aspecto, el reporte superó las expectativas.
+	\item{Media:} El reporte cumple con las expectativas.
+	\item{Baja:} El reporte contiene errores, inconsistencias o simplemente no alcanza el nivel esperado para este aspecto.
+\end{itemize}
+
+A partir de estos criterios y de una inspección manual y detallada de los reportes generados por el autor, se obtuvieron los siguientes resultados:
+
+\begin{table}[htbp]
+	\centering
+	\caption{Comparación de Reportes de LLMs (Evaluación Manual)}
+	\label{tab:comparacion_reportes}
+	\begin{tabular}{@{}lccc@{}}
+		\toprule
+		Criterio & Llama3.3 & Mixtral-8x7b & Gemma2-9b \\
+		\midrule
+		Profundidad del Análisis & Alta & Media & Baja \\
+		Coherencia y Estructura & Alta & Alta & Media \\
+		Utilidad de las Visualizaciones & Media & Media & Baja \\
+		Precisión y Calidad General & Alta & Alta & Media \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+Para intentar automatizar este proceso de comparación de los reportes, así como para obtener una métrica más precisa, se utilizó un LLM más potente para calificar los mismos reportes. En este caso, se solicitó que se asignara una puntuación del uno al 100 en cada aspecto. Como modelo clasificatorio, se escogió Gemini-2.0-Flash-Thinking-Exp-01-21, debido a su amplio contexto (que permite entregarle los tres reportes a la vez) y su gran capacidad de razonamiento, lo que lo posiciona favorablemente en ChatBot Arena \cite{chiang2024chatbot}.
+
+A partir de esta evaluación automatizada, se obtuvieron los siguientes resultados:
+
+\begin{table}[htbp]
+	\centering
+	\caption{Comparación Automática de Reportes de LLMs (Evaluación con Gemini)}
+	\label{tab:comparacion_reportes_gemini}
+	\begin{tabular}{@{}lccc@{}}
+		\toprule
+		Criterio & Llama3.3 & Mixtral-8x7b & Gemma2-9b \\
+		\midrule
+		Profundidad del Análisis & 75 & 65 & 65 \\
+		Coherencia y Estructura & 90 & 90 & 90 \\
+		Utilidad de las Visualizaciones & 85 & 75 & 60 \\
+		Precisión y Calidad General & 95 & 80 & 50 \\
+		\bottomrule
+	\end{tabular}
+\end{table}

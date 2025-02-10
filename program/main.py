@@ -623,10 +623,11 @@ with main_col: # Place main content in main_col
                                 chart_name = chart_block_parts[0].strip() # El nombre del chart esta antes del primer ``` de cierre
                                 if chart_name: # Verificamos que el nombre del chart no este vacio
                                     c = None
-                                    for item in chart_response:
-                                        if item['name']==chart_name:
-                                            c = item['c']
-                                            break
+                                    if chart_response and type(chart_response) == list:
+                                        for item in chart_response:
+                                            if item['name']==chart_name:
+                                                c = item['c']
+                                                break
                                     if c:
                                         st.altair_chart(c) # Mostramos el chart usando el nombre
 

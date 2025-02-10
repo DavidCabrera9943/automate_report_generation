@@ -132,6 +132,14 @@
    \addcontentsline{toc}{chapter}{Conclusiones}%
    \chapter*{Conclusiones}}%
   {}
+ \newenvironment{anexos}%
+ {
+ 	\cleardoublepage%
+ 	\phantomsection%
+ 	\addcontentsline{tox}{chapter}{Anexos}%
+ 	\chapter*{Anexos}
+ }%
+ {}
 \newenvironment{recomendations}%
   {\cleardoublepage%
    \phantomsection%
